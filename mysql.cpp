@@ -5,10 +5,11 @@
 #include <cppconn/prepared_statement.h>
 #include <cppconn/statement.h>
 #include <cppconn/resultset.h>
-
+#include <conio.h>
+#include "tc.h"
 using namespace std;
 
-class DatabaseManager
+class dbConnection
 {
 private:
     const string server = "tcp://127.0.0.1:3306";
@@ -16,12 +17,12 @@ private:
     const string password = "030903";
     const string database = "library_system";
 
-    sql::Connection* con;  // Per-instance connection
+    sql::Connection* con;
     sql::Driver* driver;
 
 public:
     // Constructor: Establish connection to the database server
-    DatabaseManager()
+    dbConnection()
     {
         try
         {
@@ -38,7 +39,7 @@ public:
     }
 
     // Destructor: Release resources
-    ~DatabaseManager()
+    ~dbConnection()
     {
         if (con)
         {
@@ -47,7 +48,6 @@ public:
         }
     }
 
-    // Execute a general query (e.g., CREATE, DROP)
     void executeQuery(const string& query)
     {
         if (!con)
@@ -64,17 +64,16 @@ public:
         }
         catch (sql::SQLException& e)
         {
-            cerr << "Error executing query: " << query << endl;
-            cerr << "SQLException: " << e.what() << endl;
+            cerr << RED << YELLOW << "Error executing query: " << query << endl;
+            cerr << "SQLException: " << e.what()  << RESET << endl;
         }
     }
 
-    // Insert data into a table
     void insertData(const string& name, int quantity)
     {
         if (!con)
         {
-            cerr << "No database connection available!" << endl;
+            cerr << RED << YELLOW << "No database connection available!" << endl;
             return;
         }
 
@@ -159,11 +158,39 @@ public:
         insertData("apple", 100);
     }
 
-    // Dynamically create a table with a specified schema
-    void createTable(const string& tableName, const string& schema)
-    {
-        string query = "CREATE TABLE IF NOT EXISTS " + tableName + " (" + schema + ");";
-        executeQuery(query);
-        cout << "Table '" << tableName << "' created or already exists." << endl;
+    bool login(const string& userId, const string& password) {
+        if (!con) {
+            cerr << "No database connection available!" << endl;
+            return false;
+        }
+
+        try {
+            // Prepare the SQL query to validate user credentials
+            sql::PreparedStatement* pstmt = con->prepareStatement(
+                "SELECT * FROM user WHERE userId = ? AND password = ?");
+            pstmt->setString(1, userId);
+            pstmt->setString(2, password);
+
+            sql::ResultSet* res = pstmt->executeQuery();
+
+            bool isAuthenticated = false;
+            if (res->next()) {
+                isAuthenticated = true;
+                cout << "Login successful!" << endl;
+            }
+            else {
+                cout << "Invalid Id or password. Please try again..." << endl;
+                _getch();
+            }
+
+            delete res;
+            delete pstmt;
+            return isAuthenticated;
+
+        }
+        catch (sql::SQLException& e) {
+            cerr << "Error during login: " << e.what() << endl;
+            return false;
+        }
     }
 };

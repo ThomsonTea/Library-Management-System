@@ -1,13 +1,27 @@
 #include <iostream>
-#include <vector>
-#include <string>
-#include <conio.h> // For _getch() on Windows
 #include "tc.h"
+#include "mysql.cpp"
+
 using namespace std;
 
-int main() 
-{
+int main() {
+    dbConnection db;
 
-    cout << RED << BG_GREEN << "Hello World" << RESET << endl;
+    string username, password;
+
+    while (true) {
+        system("cls");
+
+        cout << "Enter id: ";
+        cin >> username;
+        cout << "Enter password: ";
+        cin >> password;
+
+        if (db.login(username, password)) {
+            cout << "Welcome, " << username << "!" << endl;
+            break;
+        }
+    }
+
     return 0;
 }
