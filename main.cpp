@@ -1,15 +1,13 @@
 #include <iostream>
+#include <vector>
+#include <string>
+#include <conio.h> // For _getch() on Windows
+#include "tc.h"
+using namespace std;
 
-// Declare the function defined in sql_connection.cpp
-extern void setupDatabase();
-
-int main()
+int main() 
 {
-    std::cout << "Starting the Library Management System..." << std::endl;
 
-    // Call the function to set up the database
-    setupDatabase();
-
-    std::cout << "Database setup complete." << std::endl;
+    cout << RED << BG_GREEN << "Hello World" << RESET << endl;
     return 0;
 }

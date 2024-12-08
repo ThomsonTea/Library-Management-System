@@ -1,64 +1,169 @@
-#include <stdlib.h>
 #include <iostream>
-#include "mysql_connection.h"
+#include <sstream>
 #include <cppconn/driver.h>
 #include <cppconn/exception.h>
 #include <cppconn/prepared_statement.h>
+#include <cppconn/statement.h>
+#include <cppconn/resultset.h>
 
 using namespace std;
 
-// for demonstration only. never save your password in the code!
-const string server = "tcp://127.0.0.1:3306";
-const string username = "root";
-const string password = "030903";
-
-// Function to set up and demonstrate SQL operations
-void setupDatabase()
+class DatabaseManager
 {
+private:
+    const string server = "tcp://127.0.0.1:3306";
+    const string username = "root";
+    const string password = "030903";
+    const string database = "library_system";
+
+    sql::Connection* con;  // Per-instance connection
     sql::Driver* driver;
-    sql::Connection* con;
-    sql::Statement* stmt;
-    sql::PreparedStatement* pstmt;
 
-    try
+public:
+    // Constructor: Establish connection to the database server
+    DatabaseManager()
     {
-        driver = get_driver_instance();
-        con = driver->connect(server, username, password);
-
-        cout << "Connected to server successfully" << endl;
+        try
+        {
+            driver = get_driver_instance();
+            con = driver->connect(server, username, password);
+            con->setSchema(database);
+            cout << "Connected to the database successfully." << endl;
+        }
+        catch (sql::SQLException& e)
+        {
+            cerr << "Error connecting to the database: " << e.what() << endl;
+            con = nullptr;
+        }
     }
-    catch (sql::SQLException e)
+
+    // Destructor: Release resources
+    ~DatabaseManager()
     {
-        cout << "Could not connect to server. Error message: " << e.what() << endl;
-        exit(1);
+        if (con)
+        {
+            delete con;
+            cout << "Database connection closed." << endl;
+        }
     }
 
-    // Select the database
-    con->setSchema("library");
+    // Execute a general query (e.g., CREATE, DROP)
+    void executeQuery(const string& query)
+    {
+        if (!con)
+        {
+            cerr << "No database connection available!" << endl;
+            return;
+        }
 
-    stmt = con->createStatement();
-    stmt->execute("DROP TABLE IF EXISTS inventory");
-    cout << "Finished dropping table (if existed)" << endl;
-    stmt->execute("CREATE TABLE inventory (id serial PRIMARY KEY, name VARCHAR(50), quantity INTEGER);");
-    cout << "Finished creating table" << endl;
-    delete stmt;
+        try
+        {
+            sql::Statement* stmt = con->createStatement();
+            stmt->execute(query);
+            delete stmt;
+        }
+        catch (sql::SQLException& e)
+        {
+            cerr << "Error executing query: " << query << endl;
+            cerr << "SQLException: " << e.what() << endl;
+        }
+    }
 
-    pstmt = con->prepareStatement("INSERT INTO inventory(name, quantity) VALUES(?,?)");
-    pstmt->setString(1, "banana");
-    pstmt->setInt(2, 150);
-    pstmt->execute();
-    cout << "One row inserted." << endl;
+    // Insert data into a table
+    void insertData(const string& name, int quantity)
+    {
+        if (!con)
+        {
+            cerr << "No database connection available!" << endl;
+            return;
+        }
 
-    pstmt->setString(1, "orange");
-    pstmt->setInt(2, 154);
-    pstmt->execute();
-    cout << "One row inserted." << endl;
+        try
+        {
+            sql::PreparedStatement* pstmt = con->prepareStatement("INSERT INTO inventory(name, quantity) VALUES(?, ?)");
+            pstmt->setString(1, name);
+            pstmt->setInt(2, quantity);
+            pstmt->execute();
+            cout << "Inserted: " << name << " - " << quantity << endl;
+            delete pstmt;
+        }
+        catch (sql::SQLException& e)
+        {
+            cerr << "Error inserting data: " << name << endl;
+            cerr << "SQLException: " << e.what() << endl;
+        }
+    }
 
-    pstmt->setString(1, "apple");
-    pstmt->setInt(2, 100);
-    pstmt->execute();
-    cout << "One row inserted." << endl;
+    // Display all data from a specified table
+    void showData(const string& table)
+    {
+        if (!con)
+        {
+            cerr << "No database connection available!" << endl;
+            return;
+        }
 
-    delete pstmt;
-    delete con;
-}
+        try
+        {
+            string query = "SELECT * FROM " + table;
+            sql::Statement* stmt = con->createStatement();
+            sql::ResultSet* res = stmt->executeQuery(query);
+
+            if (!res->next())
+            {
+                cout << "No data found in table: " << table << "." << endl;
+            }
+            else
+            {
+                sql::ResultSetMetaData* metadata = res->getMetaData();
+                int columnCount = metadata->getColumnCount();
+
+                // Print column headers
+                for (int i = 1; i <= columnCount; i++)
+                {
+                    cout << metadata->getColumnName(i) << "\t";
+                }
+                cout << endl;
+
+                // Print rows
+                do
+                {
+                    for (int i = 1; i <= columnCount; i++)
+                    {
+                        cout << res->getString(i) << "\t";
+                    }
+                    cout << endl;
+                } while (res->next());
+            }
+
+            delete res;
+            delete stmt;
+        }
+        catch (sql::SQLException& e)
+        {
+            cerr << "Error showing data: " << e.what() << endl;
+        }
+    }
+
+    // Set up the database and populate initial data
+    void setupDatabase()
+    {
+        executeQuery("DROP TABLE IF EXISTS inventory");
+        cout << "Dropped table (if existed)." << endl;
+
+        executeQuery("CREATE TABLE inventory (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(50), quantity INT);");
+        cout << "Created table 'inventory'." << endl;
+
+        insertData("banana", 150);
+        insertData("orange", 154);
+        insertData("apple", 100);
+    }
+
+    // Dynamically create a table with a specified schema
+    void createTable(const string& tableName, const string& schema)
+    {
+        string query = "CREATE TABLE IF NOT EXISTS " + tableName + " (" + schema + ");";
+        executeQuery(query);
+        cout << "Table '" << tableName << "' created or already exists." << endl;
+    }
+};
