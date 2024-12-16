@@ -11,7 +11,8 @@ public:
     User();
     ~User();
 
-    bool userLogin(dbConnection& db, std::string& username, std::string& password);
+    bool userVerify(dbConnection& db, std::string& username, std::string& password);
+    bool isUser(const std::string& userId, const std::string& password);
 
 private:
     std::string userID;
@@ -22,6 +23,9 @@ private:
     std::string address;
     std::string password;
     std::string role;
+
+    dbConnection* con;
+    dbConnection db;
 };
 
 #endif

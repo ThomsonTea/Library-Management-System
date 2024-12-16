@@ -132,14 +132,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="loginHIstory.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="dbConnnection.cpp" />
     <ClCompile Include="user.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dbConnection.h" />
-    <ClInclude Include="loginHIstory.h" />
     <ClInclude Include="tc.h" />
     <ClInclude Include="user.h" />
   </ItemGroup>

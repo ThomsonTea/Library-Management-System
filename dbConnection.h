@@ -17,14 +17,8 @@ public:
     ~dbConnection();
 
     void executeQuery(const std::string& query);
-
-    void insertData(const std::string& name, int quantity);
-
-    void showData(const std::string& table);
-
-    bool login(const std::string& userId, const std::string& password);
-
-    void setupDatabase();
+    
+    sql::Connection* getConnection();
 
 private:
     const std::string server = "tcp://127.0.0.1:3306";
@@ -32,8 +26,8 @@ private:
     const std::string password = "030903";
     const std::string database = "library_system";
 
-    sql::Connection* con;
-    sql::Driver* driver;
+     sql::Driver* driver;
+     sql::Connection* con;
 };
 
 #endif // DBCONNECTION_H

@@ -17,7 +17,7 @@ int main() {
     {
         while (!loggedIn) 
         {
-            if (user.userLogin(db, username, password)) 
+            if (user.userVerify(db, username, password)) 
             {
                 loggedIn = true;
             }
