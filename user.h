@@ -2,6 +2,10 @@
 #define USER_H
 
 #include <iostream>
+#include <conio.h>
+#include <thread>
+#include <chrono>
+#include "user.h"
 #include <string>
 #include "dbConnection.h"  // Include the dbConnection header
 
@@ -11,8 +15,30 @@ public:
     User();
     ~User();
 
-    bool userVerify(dbConnection& db, std::string& username, std::string& password);
+    std::string getUserID();
+    std::string getName();
+    std::string getIc();
+    std::string getPhoneNum();
+    std::string getEmail();
+    std::string getAddress();
+    std::string getPassword();
+    std::string getRole();
+
+    void setUserID(std::string userID);
+    void setName(std::string name);
+    void setIc(std::string ic);
+    void setPhoneNum(std::string phoneNum);
+    void setEmail(std::string email);
+    void setAddress(std::string address);
+    void setPassword(std::string password);
+    void setRole(std::string role);
+
+    bool userVerify(dbConnection db, std::string& username, std::string& password);
     bool isUser(const std::string& userId, const std::string& password);
+    bool addUser(const std::string& name, const std::string& ic, const std::string& phoneNum, const std::string& email, const std::string& address, const std::string& password,
+        const std::string& role);
+    void userProfile();
+    void retrieveUserFromDB(const std::string& userID);
 
 private:
     std::string userID;
