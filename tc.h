@@ -27,6 +27,11 @@
 #define UNDERLINE "\033[4m"     // Underlined text
 #define REVERSED "\033[7m"      // Reversed foreground and background colors
 
-#define clear_screen() puts("\x1b[2j")
+// Cursor
+#define	CURSOR_UP "\x1b[F"		//move the cursor to the beginning of the previous line
+
+// Screen
+#define CLEAR_LINE "\x1b[K"		//clear the line from the cursor position to the end of the line
+#define CLEAR_ENTIRE_SCREEN "\x1b[2J"		//Clear the entire screen
 
 #endif

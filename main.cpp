@@ -16,7 +16,7 @@ int main() {
     {
         while (!loggedIn) 
         {
-            if (user.userVerify(db, userID, password)) 
+            if (user.userVerify(db)) 
             {
                 loggedIn = true;
             }
@@ -66,7 +66,6 @@ int main() {
                     std::this_thread::sleep_for(std::chrono::seconds(1));
 
                     loggedIn = false;
-                    break;
                 }
                 break;
             }
@@ -78,6 +77,8 @@ int main() {
             }
 
         } while (loggedIn);
+    
+        main();
     }
 
     return 0;

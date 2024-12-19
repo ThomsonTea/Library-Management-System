@@ -40,7 +40,6 @@ void dbConnection::executeQuery(const std::string& query)
         std::cerr << "No database connection available!" << std::endl;
         return;
     }
-
     try
     {
         sql::Statement* stmt = con->createStatement();
