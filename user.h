@@ -12,6 +12,8 @@ class User
 {
 public:
     User();
+
+    User();
     ~User();
 
     std::string getUserID();
@@ -39,6 +41,7 @@ public:
     void userProfile();
     void retrieveUserFromDB(const std::string& userID);
     void changePassword();
+
     std::string hiddenInput();
 
 private:

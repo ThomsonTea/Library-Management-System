@@ -6,10 +6,7 @@
 #include "user.h"
 #include "dbConnection.h"
 
-User::User() : con(nullptr) 
-{
-
-}
+User::User() : con(nullptr) {}
 
 User::~User()
 {
@@ -131,7 +128,7 @@ bool User::isUser(const std::string& userId, const std::string& password)
 
     try {
         // Use a prepared statement to prevent SQL injection
-        std::string query = "SELECT * FROM User WHERE userID = ? AND password = ?";
+        std::string query = "SELECT * FROM User WHERE BINARY userID = ? AND BINARY password = ?";
 
         // Get the connection from dbConnection
         sql::PreparedStatement* pstmt = db.getConnection()->prepareStatement(query);
@@ -275,13 +272,13 @@ void User::retrieveUserFromDB(const std::string& userID)
         if (res->next()) 
         {
             // Fetch data from the result set
-            this->userID = res->getString("userID");
-            this->name = res->getString("name");
-            this->ic = res->getString("ic");
-            this->phoneNum = res->getString("phoneNum");
-            this->email = res->getString("email");
-            this->address = res->getString("address");
-            this->role = res->getString("role");
+            getUserID() = res->getString("userID");
+            getName() = res->getString("name");
+            getIc() = res->getString("ic");
+            getPhoneNum() = res->getString("phoneNum");
+            getEmail() = res->getString("email");
+            getAddress() = res->getString("address");
+            getRole() = res->getString("role");
         }
         else {
             std::cerr << "No user found with the provided userID." << std::endl;
@@ -342,20 +339,20 @@ void User::changePassword()
             confirmPassword = hiddenInput();
         }
 
-        if (isUser(this->userID, oldPassword))
+        if (isUser(getUserID(), oldPassword))
         {
             std::string query = "UPDATE User SET password = ? WHERE userID = ? AND password = ?";
             // Get the connection from dbConnection
             sql::PreparedStatement* pstmt = db.getConnection()->prepareStatement(query);
             pstmt->setString(1, newPassword);
-            pstmt->setString(2, this->userID);
+            pstmt->setString(2, getUserID());
             pstmt->setString(3, oldPassword);
 
             int rowsAffected = pstmt->executeUpdate();
 
             if (rowsAffected > 0)
             {
-                std::cout << GREEN << "\n\nPassword updated successfully for user with ID: " << CYAN << this->userID << RESET << std::endl;
+                std::cout << GREEN << "\n\nPassword updated successfully for user with ID: " << CYAN << getUserID() << RESET << std::endl;
                 std::cout << "\nPress any key to continue..." << std::endl;
                 _getch();
             }
