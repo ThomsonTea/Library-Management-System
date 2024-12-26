@@ -12,8 +12,6 @@ class User
 {
 public:
     User();
-
-    User();
     ~User();
 
     std::string getUserID();

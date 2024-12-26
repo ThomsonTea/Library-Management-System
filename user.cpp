@@ -87,7 +87,7 @@ void User::setPassword(std::string password)
 }
 void User::setRole(std::string role)
 {
-    this->password = password;
+    this->role = role;
 }
 
 bool User::userVerify(dbConnection db)
@@ -95,7 +95,7 @@ bool User::userVerify(dbConnection db)
     while (true)
     {
         system("cls");
-        std::cout << "/*User Login*/" << std::endl;
+        std::cout << CYAN << "User Login" << RESET << std::endl;
         std::cout << "Enter id: ";
         std::cin >> userID;
         std::cout << "Enter password: ";
@@ -204,7 +204,6 @@ void User::userProfile()
     {
         system("cls");
         int userChoice = 0;
-
         const int labelWidth = 20;   // Width for labels
         const int valueWidth = 40;   // Width for values
         // Print each row of the table
@@ -272,13 +271,13 @@ void User::retrieveUserFromDB(const std::string& userID)
         if (res->next()) 
         {
             // Fetch data from the result set
-            getUserID() = res->getString("userID");
-            getName() = res->getString("name");
-            getIc() = res->getString("ic");
-            getPhoneNum() = res->getString("phoneNum");
-            getEmail() = res->getString("email");
-            getAddress() = res->getString("address");
-            getRole() = res->getString("role");
+            setUserID(res->getString("userID"));
+            setName(res->getString("name"));
+            setIc(res->getString("ic"));
+            setPhoneNum(res->getString("phoneNum"));
+            setEmail(res->getString("email"));
+            setAddress(res->getString("address"));
+            setRole(res->getString("role"));
         }
         else {
             std::cerr << "No user found with the provided userID." << std::endl;
