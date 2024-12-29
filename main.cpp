@@ -1,9 +1,9 @@
 #include <iostream>
 #include <conio.h>
 #include <thread>
-#include "tc.h"
 #include "dbConnection.h"
 #include "user.h"
+#include "tc.h"
 
 int main() {
     int choice;

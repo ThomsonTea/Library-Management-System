@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #include <cppconn/driver.h>
 #include <cppconn/exception.h>
 #include <cppconn/prepared_statement.h>
@@ -7,6 +8,7 @@
 #include <conio.h>
 #include "tc.h"
 #include "dbConnection.h"
+
 
 dbConnection::dbConnection()
 {

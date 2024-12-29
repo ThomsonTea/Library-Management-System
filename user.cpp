@@ -2,9 +2,11 @@
 #include <conio.h>
 #include <thread>
 #include <chrono>
+#include <string>
 #include <sstream>
 #include "user.h"
 #include "dbConnection.h"
+#include "tc.h"
 
 User::User() : con(nullptr) {}
 
@@ -79,7 +81,7 @@ void User::setEmail(std::string email)
 }
 void User::setAddress(std::string address)
 {
-    this->address = email;
+    this->address = address;
 }
 void User::setPassword(std::string password)
 {
@@ -158,15 +160,14 @@ bool User::isUser(const std::string& userId, const std::string& password)
         return false;
     }
 }
-bool User::addUser(const std::string& name, const std::string& ic, const std::string& phoneNum, const std::string& email, const std::string& address, const std::string& password, const std::string& role)
+void User::addUser(const std::string& name, const std::string& ic, const std::string& phoneNum, const std::string& email, const std::string& address, const std::string& password, const std::string& role)
 {
     if (!db.getConnection()) {  // Make sure db connection is available
         std::cerr << "No database connection available!" << std::endl;
-        return false;
+        return;
     }
     try
     {
-        
         std::string query = "INSERT INTO User (name, ic, phoneNum, email, address, password, role) "
             "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
@@ -189,11 +190,202 @@ bool User::addUser(const std::string& name, const std::string& ic, const std::st
         delete pstmt;
 
         std::cout << "User added successfully!" << std::endl;
-        return true;
+        return;
     }
     catch (sql::SQLException& e) {
         std::cerr << "Error during login: " << e.what() << std::endl;
-        return false;
+        return;
+    }
+}
+
+void User::editProfile()
+{
+    if (!db.getConnection()) {  // Make sure db connection is available
+        std::cerr << "No database connection available!" << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        return;
+    }
+    try
+    {
+        bool quitEditProfile = false;
+        do
+        {
+            system("cls");
+            retrieveUserFromDB(getUserID());
+            int option;
+            const int labelWidth = 20;   // Width for labels
+            const int valueWidth = 40;   // Width for values
+            std::cout << CYAN << "Edit " << YELLOW << getName() << CYAN << "'s Profile:\n" << RESET << std::endl;
+            std::cout << "+--------------------------------------------------------------+" << std::endl;
+            std::cout << "| " << std::left << std::setw(labelWidth) << "Name:"
+                << std::setw(valueWidth) << (getName() + " (" + getRole() + ")") << " |" << std::endl;
+            std::cout << "| " << std::left << std::setw(labelWidth) << "IC Number:"
+                << std::setw(valueWidth) << getIc() << " |" << std::endl;
+            std::cout << "| " << std::left << std::setw(labelWidth) << "Phone Number:"
+                << std::setw(valueWidth) << getPhoneNum() << " |" << std::endl;
+            std::cout << "| " << std::left << std::setw(labelWidth) << "Email:"
+                << std::setw(valueWidth) << getEmail() << " |" << std::endl;
+            std::cout << "| " << std::left << std::setw(labelWidth) << "Home Address:"
+                << std::setw(valueWidth) << getAddress() << " |" << std::endl;
+            std::cout << "+--------------------------------------------------------------+" << std::endl;
+
+            std::cout << "\nUpdate:"
+                << "\n1. Name "
+                << "\n2. IC Number"
+                << "\n3. Phone Number"
+                << "\n4. Email"
+                << "\n5. Home Address"
+                << "\n0. Return back" << std::endl;
+
+            std::cout << "\nGo To: ";
+            std::cin >> option;
+
+            std::cin.ignore();
+
+            std::string query;
+            std::string data;
+            int confirmKey;
+            switch (option)
+            {
+            case 1:
+                std::cout << "\x1b[10;1H";
+                std::cout << "\x1b[K";
+                std::cout << "\x1b[0J";
+                std::cout << "\nEnter New name:" << std::endl;
+                std::cout << "\x1b[11;17H";
+                std::cout << "\x1b[K";
+                std::cout << "\x1b[0J";
+                std::getline(std::cin, data);
+
+                std::cout << "\nConfirm to change your name " << CYAN << UNDERLINE << getName() << RESET << " to " << CYAN << data << RESET << " ?"
+                    << "\nPlease press \"" << GREEN << "ENTER" << RESET "\" to save the change, other keys to return:\n";
+                confirmKey = _getch();
+                if (confirmKey == 13)
+                {
+                    query = "UPDATE User SET name='" + data + "' WHERE userId='" + getUserID() + "'";
+                    db.executeQuery(query);
+                }
+                else
+                {
+                    std::cout << RED << "\nFailed to save changes." << RESET << std::endl;
+                    std::cout << "\nReturning Back..." << std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
+                }
+                break;
+            case 2:
+                std::cout << "\x1b[10;1H";
+                std::cout << "\x1b[K";
+                std::cout << "\x1b[0J";
+                std::cout << "\nEnter New IC Number:" << std::endl;
+                std::cout << "\x1b[11;22H";
+                std::cout << "\x1b[K";
+                std::cout << "\x1b[0J";
+                std::getline(std::cin, data);
+                std::cout << "\nConfirm to change your IC Number " << CYAN << UNDERLINE << getIc() << RESET << " to " << CYAN << data << RESET << " ?"
+                    << "\nPlease press \"" << GREEN << "ENTER" << RESET "\" to save the change, other keys to return:\n";
+                confirmKey = _getch();
+                if (confirmKey == 13)
+                {
+                    query = "UPDATE User SET ic='" + data + "' WHERE userId='" + getUserID() + "'";
+                    db.executeQuery(query);
+                }
+                else
+                {
+                    std::cout << RED << "\nFailed to save changes." << RESET << std::endl;
+                    std::cout << "\nReturning Back..." << std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
+                }
+                db.executeQuery(query);
+                break;
+            case 3:
+                std::cout << "\x1b[10;1H";
+                std::cout << "\x1b[K";
+                std::cout << "\x1b[0J";
+                std::cout << "\nEnter New Phone Number:" << std::endl;
+                std::cout << "\x1b[11;25H";
+                std::cout << "\x1b[K";
+                std::cout << "\x1b[0J";
+                std::getline(std::cin, data);
+                std::cout << "\nConfirm to change your phone number " << CYAN << UNDERLINE << getPhoneNum() << RESET << " to " << CYAN << data << RESET << " ?"
+                    << "\nPlease press \"" << GREEN << "ENTER" << RESET "\" to save the change, other keys to return:\n";
+                confirmKey = _getch();
+                if (confirmKey == 13)
+                {
+                    query = "UPDATE User SET phoneNum='" + data + "' WHERE userId='" + getUserID() + "'";
+                    db.executeQuery(query);
+                }
+                else
+                {
+                    std::cout << RED << "\nFailed to save changes." << RESET << std::endl;
+                    std::cout << "\nReturning Back..." << std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
+                }
+                db.executeQuery(query);
+                break;
+            case 4:
+                std::cout << "\x1b[10;1H";
+                std::cout << "\x1b[K";
+                std::cout << "\x1b[0J";
+                std::cout << "\nEnter New Email:" << std::endl;
+                std::cout << "\x1b[11;18H";
+                std::cout << "\x1b[K";
+                std::cout << "\x1b[0J";
+                std::getline(std::cin, data);
+                std::cout << "\nConfirm to change your email " << CYAN << UNDERLINE << getEmail() << RESET << " to " << CYAN << data << RESET << " ?"
+                    << "\nPlease press \"" << GREEN << "ENTER" << RESET "\" to save the change, other keys to return:\n";
+                confirmKey = _getch();
+                if (confirmKey == 13)
+                {
+                    query = "UPDATE User SET email='" + data + "' WHERE userId='" + getUserID() + "'";
+                    db.executeQuery(query);
+                }
+                else
+                {
+                    std::cout << RED << "\nFailed to save changes." << RESET << std::endl;
+                    std::cout << "\nReturning Back..." << std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
+                }
+                db.executeQuery(query);
+                break;
+            case 5:
+                std::cout << "\x1b[10;1H";
+                std::cout << "\x1b[K";
+                std::cout << "\x1b[0J";
+                std::cout << "\nEnter New Home Address:" << std::endl;
+                std::cout << "\x1b[11;25H";
+                std::cout << "\x1b[K";
+                std::cout << "\x1b[0J";
+                std::getline(std::cin, data);
+                std::cout << "\nConfirm to change your home address " << CYAN << UNDERLINE << getName() << RESET << " to " << CYAN << data << RESET << " ?"
+                    << "\nPlease press \"" << GREEN << "ENTER" << RESET "\" to save the change, other keys to return:\n";
+                confirmKey = _getch();
+                if (confirmKey == 13)
+                {
+                    query = "UPDATE User SET address='" + data + "' WHERE userId='" + getUserID() + "'";
+                    db.executeQuery(query);
+                }
+                else
+                {
+                    std::cout << RED << "\nFailed to save changes." << RESET << std::endl;
+                    std::cout << "\nReturning Back..." << std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
+                }
+                db.executeQuery(query);
+                break;
+            case 0:
+                quitEditProfile = true;
+                break;
+            default:
+                std::cout << "\nInvalid Input, please try again..." << std::endl;
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                system("cls");
+                break;
+            }
+        } while (!quitEditProfile);
+    }
+    catch (sql::SQLException& e) {
+        std::cerr << "Error during login: " << e.what() << std::endl;
+        return;
     }
 }
 
@@ -203,9 +395,10 @@ void User::userProfile()
     do 
     {
         system("cls");
-        int userChoice = 0;
+        int option = 0;
         const int labelWidth = 20;   // Width for labels
         const int valueWidth = 40;   // Width for values
+        std::cout << CYAN << "Welcome, " << YELLOW << getName() << CYAN << "!\n" << RESET << std::endl;
         // Print each row of the table
         std::cout << "+--------------------------------------------------------------+" << std::endl;
         std::cout << "| " << std::left << std::setw(labelWidth) << "Name:"
@@ -222,19 +415,18 @@ void User::userProfile()
         // Print table footer
         std::cout << "+--------------------------------------------------------------+" << std::endl;
 
-        std::cout << "Settings:"
+        std::cout << "\nSettings:"
             << "\n1. Edit Profile"
             << "\n2. Change Password"
             << "\n0. Return Back" << std::endl;
 
-        std::cout << "Go To:";
-        std::cin >> userChoice;
+        std::cout << "\nGo To:";
+        std::cin >> option;
 
-
-        switch (userChoice)
+        switch (option)
         {
         case 1:
-            //EditProfile;
+            editProfile();
             break;
         case 2:
             changePassword();
@@ -256,6 +448,7 @@ void User::retrieveUserFromDB(const std::string& userID)
 {
     if (!db.getConnection()) {  // Make sure db connection is available
         std::cerr << "No database connection available!" << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
         return;
     }
     try
@@ -297,6 +490,7 @@ void User::changePassword()
 {
     if (!db.getConnection()) {  // Make sure db connection is available
         std::cerr << "No database connection available!" << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
         return;
     }
     try

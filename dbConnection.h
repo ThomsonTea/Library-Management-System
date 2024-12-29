@@ -9,7 +9,7 @@
 #include <cppconn/statement.h>
 #include <cppconn/resultset.h>
 #include <conio.h>
-#include "tc.h"
+
 class dbConnection {
 public:
     dbConnection();
