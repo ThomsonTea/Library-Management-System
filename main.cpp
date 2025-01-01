@@ -4,11 +4,13 @@
 #include <stdlib.h>
 #include "dbConnection.h"
 #include "user.h"
+#include "book.h"
 #include "tc.h"
 
 int main() {
     dbConnection db;
     User user;
+    Book book;
     std::string userID, password;
     bool loggedIn = false;
     int selected = 0;  // Keeps track of which option is selected.
@@ -28,29 +30,29 @@ int main() {
             std::cout << CYAN << "Library Management System" << RESET << std::endl;
 
             std::cout << "\nModule: " << std::endl;
-            std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? YELLOW : "") << "My Profile" << RESET << std::endl;
-            std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? YELLOW : "") << "Borrowing" << RESET << std::endl;
-            std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? YELLOW : "") << "Returning" << RESET << std::endl;
-            std::cout << (selected == 3 ? "-> " : "   ") << (selected == 3 ? YELLOW : "") << "Reporting" << RESET << std::endl;
-            std::cout << (selected == 4 ? "-> " : "   ") << (selected == 4 ? YELLOW : "") << "Library" << RESET << std::endl;
-            std::cout << (selected == 5 ? "-> " : "   ") << (selected == 5 ? YELLOW : "") << "User Management" << RESET << std::endl;
+            std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "My Profile" << RESET << std::endl;
+            std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Borrowing" << RESET << std::endl;
+            std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "Returning" << RESET << std::endl;
+            std::cout << (selected == 3 ? "-> " : "   ") << (selected == 3 ? BG_YELLOW : "") << "Reporting" << RESET << std::endl;
+            std::cout << (selected == 4 ? "-> " : "   ") << (selected == 4 ? BG_YELLOW : "") << "Library" << RESET << std::endl;
+            std::cout << (selected == 5 ? "-> " : "   ") << (selected == 5 ? BG_YELLOW : "") << "User Management" << RESET << std::endl;
 
-            std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, or press Esc/q to quit.\n";
+            std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, or press Esc to quit.\n";
 
             // Capture user input for navigation
             char c = _getch(); // Use _getch() to get key press without waiting for enter.
             std::string exitpass;
             switch (c) {
             case KEY_UP:
-                selected = (selected - 1 + 7) % 7; // Wrap around to the last option if at the top.
+                selected = (selected - 1 + 6) % 6; // Wrap around to the last option if at the top.
                 break;
             case KEY_DOWN:
-                selected = (selected + 1) % 7; // Wrap around to the first option if at the bottom.
+                selected = (selected + 1) % 6; // Wrap around to the first option if at the bottom.
                 break;
             case KEY_ENTER:
                 switch (selected) {
                 case 0:
-                    user.userProfile(); // User Profile
+                    user.userProfile();
                     break;
                 case 1:
                     // Borrowing module
@@ -62,7 +64,7 @@ int main() {
                     // Report
                     break;
                 case 4:
-                    // Library Inventory
+                    book.libraryPrompt();
                     break;
                 case 5:
                     // User Management

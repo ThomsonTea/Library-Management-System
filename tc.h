@@ -27,6 +27,8 @@
 #define KEY_DOWN 80     // Down arrow character
 #define KEY_ENTER '\r'  // Enter key character
 #define KEY_ESC 27      // Escape key character
+#define KEY_UPPER_R 82		// R key character
+#define KEY_LOWER_R 114		// r key character
 
 // Text Styles
 #define BOLD "\033[1m"          // Bold text

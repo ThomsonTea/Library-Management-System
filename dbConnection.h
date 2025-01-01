@@ -17,7 +17,8 @@ public:
     ~dbConnection();
 
     void executeQuery(const std::string& query);
-    
+    void fetchAndDisplayData(const std::string& query);
+
     sql::Connection* getConnection();
 
 private:
