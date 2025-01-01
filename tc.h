@@ -22,6 +22,12 @@
 #define BG_CYAN "\033[46m"      // Cyan background
 #define BG_WHITE "\033[47m"     // White background
 
+//Key Binding
+#define KEY_UP 72       // Up arrow character
+#define KEY_DOWN 80     // Down arrow character
+#define KEY_ENTER '\r'  // Enter key character
+#define KEY_ESC 27      // Escape key character
+
 // Text Styles
 #define BOLD "\033[1m"          // Bold text
 #define UNDERLINE "\033[4m"     // Underlined text

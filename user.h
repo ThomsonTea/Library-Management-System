@@ -40,7 +40,6 @@ public:
     void userProfile();
     void retrieveUserFromDB(const std::string& userID);
     void changePassword();
-    void clearLine(int rows, int cols);
 
     std::string hiddenInput();
 
