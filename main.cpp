@@ -6,22 +6,7 @@
 #include "user.h"
 #include "tc.h"
 
-void displayMainMenu(int selected) {
-    std::cout << CYAN << "Library Management System" << RESET << std::endl;
-
-    std::cout << "\nModule: " << std::endl;
-    std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? YELLOW : "") << "My Profile" << RESET << std::endl;
-    std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? YELLOW : "") << "Borrowing" << RESET << std::endl;
-    std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? YELLOW : "") << "Returning" << RESET << std::endl;
-    std::cout << (selected == 3 ? "-> " : "   ") << (selected == 3 ? YELLOW : "") << "Reporting" << RESET << std::endl;
-    std::cout << (selected == 4 ? "-> " : "   ") << (selected == 4 ? YELLOW : "") << "Library" << RESET << std::endl;
-    std::cout << (selected == 5 ? "-> " : "   ") << (selected == 5 ? YELLOW : "") << "User Management" << RESET << std::endl;
-
-    std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, or press Esc/q to quit.\n";
-}
-
 int main() {
-    int choice;
     dbConnection db;
     User user;
     std::string userID, password;
@@ -40,8 +25,17 @@ int main() {
         // Main menu loop
         do {
             system("cls");
-            // Display the menu with arrow navigation
-            displayMainMenu(selected);
+            std::cout << CYAN << "Library Management System" << RESET << std::endl;
+
+            std::cout << "\nModule: " << std::endl;
+            std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? YELLOW : "") << "My Profile" << RESET << std::endl;
+            std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? YELLOW : "") << "Borrowing" << RESET << std::endl;
+            std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? YELLOW : "") << "Returning" << RESET << std::endl;
+            std::cout << (selected == 3 ? "-> " : "   ") << (selected == 3 ? YELLOW : "") << "Reporting" << RESET << std::endl;
+            std::cout << (selected == 4 ? "-> " : "   ") << (selected == 4 ? YELLOW : "") << "Library" << RESET << std::endl;
+            std::cout << (selected == 5 ? "-> " : "   ") << (selected == 5 ? YELLOW : "") << "User Management" << RESET << std::endl;
+
+            std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, or press Esc/q to quit.\n";
 
             // Capture user input for navigation
             char c = _getch(); // Use _getch() to get key press without waiting for enter.
