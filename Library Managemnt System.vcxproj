@@ -141,6 +141,9 @@
     <ClInclude Include="tc.h" />
     <ClInclude Include="user.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="SQLScript.sql" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
