@@ -67,11 +67,8 @@ int main() {
                     book.libraryPrompt();
                     break;
                 case 5:
-                    // User Management
+                    user.userManagementMenu();
                     break;
-                case 6: {
-
-                }
                 default:
                     std::cout << "\nInvalid Input, please try again..." << std::endl;
                     break;

@@ -34,13 +34,12 @@ public:
 
     bool userVerify(dbConnection db);
     bool isUser(const std::string& userId, const std::string& password);
-    void addUser(const std::string& name, const std::string& ic, const std::string& phoneNum, const std::string& email, const std::string& address, const std::string& password,
-        const std::string& role);
+    void registerUser();
     void editProfile();
     void userProfile();
     void retrieveUserFromDB(const std::string& userID);
     void changePassword();
-
+    void userManagementMenu();
     std::string hiddenInput();
 
 private:

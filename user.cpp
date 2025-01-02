@@ -160,42 +160,129 @@ bool User::isUser(const std::string& userId, const std::string& password)
         return false;
     }
 }
-void User::addUser(const std::string& name, const std::string& ic, const std::string& phoneNum, const std::string& email, const std::string& address, const std::string& password, const std::string& role)
+void User::registerUser()
 {
-    if (!db.getConnection()) {  // Make sure db connection is available
-        std::cerr << "No database connection available!" << std::endl;
-        return;
-    }
     try
     {
-        std::string query = "INSERT INTO User (name, ic, phoneNum, email, address, password, role) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        system("cls");
+        std::string username, password, email, role, userID, name, ic, phoneNum, address;
 
-        // Get the connection from dbConnection and prepare the statement
+        std::cout << "Register User" << std::endl;
+
+        // Prompt for username
+        std::cout << "Username: ";
+        std::cin.ignore();
+        std::getline(std::cin, username);
+
+        // Prompt for password
+        std::cout << "Password: ";
+        std::getline(std::cin, password);
+
+        // Prompt for email
+        std::cout << "Email: ";
+        std::getline(std::cin, email);
+
+        // Prompt for name
+        std::cout << "Name: ";
+        std::getline(std::cin, name);
+
+        // Prompt for IC
+        std::cout << "IC: ";
+        std::getline(std::cin, ic);
+
+        // Prompt for phone number
+        std::cout << "Phone Number: ";
+        std::getline(std::cin, phoneNum);
+
+        // Prompt for address
+        std::cout << "Address: ";
+        std::getline(std::cin, address);
+
+        // Prompt for role selection with validation
+        int roleChoice;
+        do
+        {
+            std::cout << "Select Role [1 for User, 2 for Admin, 3 for Staff]: ";
+            std::cin >> roleChoice;
+
+            switch (roleChoice)
+            {
+            case 1:
+                role = "user";
+                break;
+            case 2:
+                role = "admin";
+                break;
+            case 3:
+                role = "staff";
+                break;
+            default:
+                std::cout << "Invalid choice. Please select 1, 2, or 3." << std::endl;
+            }
+        } while (roleChoice < 1 || roleChoice > 3);
+
+        // Generate userID based on role
+        char prefix = (role == "admin") ? 'A' : (role == "staff") ? 'S' : 'U';
+        std::string query = "SELECT userID FROM User WHERE userID LIKE ? ORDER BY userID DESC LIMIT 1";
         sql::PreparedStatement* pstmt = db.getConnection()->prepareStatement(query);
 
-        // Bind parameters to the prepared statement
-        pstmt->setString(1, name);          // Bind name
-        pstmt->setString(2, ic);            // Bind IC
-        pstmt->setString(3, phoneNum);      // Bind phone number
-        pstmt->setString(4, email);         // Bind email
-        pstmt->setString(5, address);       // Bind address
-        pstmt->setString(6, password);      // Bind password
-        pstmt->setString(7, role);          // Bind role
+        // Set the prefix for the query
+        pstmt->setString(1, std::string(1, prefix) + "%");
+        sql::ResultSet* res = pstmt->executeQuery();
 
-        // Execute the insert query
-        pstmt->executeUpdate();
+        if (res->next())
+        {
+            // Get the last userID and increment the numeric part
+            std::string lastUserID = res->getString("userID");
+            int lastIDNumber = std::stoi(lastUserID.substr(1)); // Remove prefix and convert to integer
+            int newIDNumber = lastIDNumber + 1;
+
+            // Format the new userID with leading zeros
+            std::ostringstream oss;
+            oss << prefix << std::setw(8) << std::setfill('0') << newIDNumber;
+            userID = oss.str();
+        }
+        else
+        {
+            // Start with the first userID if none exist
+            userID = std::string(1, prefix) + "00000001";
+        }
 
         // Clean up
         delete pstmt;
+        delete res;
 
-        std::cout << "User added successfully!" << std::endl;
-        return;
+        // Insert the new user into the database
+        query = "INSERT INTO User (userID, name, ic, email, phoneNum, address, password, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        pstmt = db.getConnection()->prepareStatement(query);
+
+        pstmt->setString(1, userID);
+        pstmt->setString(2, name);
+        pstmt->setString(3, ic);
+        pstmt->setString(4, email);
+        pstmt->setString(5, phoneNum);
+        pstmt->setString(6, address);
+        pstmt->setString(7, password);
+        pstmt->setString(8, role);
+
+        pstmt->executeUpdate();
+
+        delete pstmt;
+
+        std::cout << GREEN << "User registered successfully with userID: " << RESET << userID <<  std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(1));
     }
-    catch (sql::SQLException& e) {
-        std::cerr << "Error during login: " << e.what() << std::endl;
-        return;
+    catch (sql::SQLException& e)
+    {
+        std::cerr << "Database error while registering user: " << e.what() << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(2));
     }
+    catch (std::exception& e)
+    {
+        std::cerr << "Unexpected error: " << e.what() << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+    }
+
 }
 
 void User::editProfile()
@@ -608,4 +695,55 @@ std::string User::hiddenInput()
     }
     std::cout << std::endl;
     return input;
+}
+
+void User::userManagementMenu()
+{
+    int selected = 0;  // Keeps track of which option is selected.
+    bool selecting = true;
+
+    do {
+        system("cls");
+        std::cout << CYAN << "Library Management System" << RESET << std::endl;
+
+        std::cout << "\nModule: " << std::endl;
+        std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "Register User" << RESET << std::endl;
+        std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Edit User" << RESET << std::endl;
+        std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "Delete User" << RESET << std::endl;
+
+        std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, or press Esc to quit.\n";
+
+        // Capture user input for navigation
+        char c = _getch(); // Use _getch() to get key press without waiting for enter.
+        std::string exitpass;
+        switch (c) {
+        case KEY_UP:
+            selected = (selected - 1 + 3) % 3; // Wrap around to the last option if at the top.
+            break;
+        case KEY_DOWN:
+            selected = (selected + 1) % 3; // Wrap around to the first option if at the bottom.
+            break;
+        case KEY_ENTER:
+            switch (selected) {
+            case 0:
+                //Register User
+                break;
+            case 1:
+                //Edit User
+                break;
+            case 2:
+                //Delete User
+                break;
+            default:
+                std::cout << "\nInvalid Input, please try again..." << std::endl;
+                break;
+            }
+            break;
+        case KEY_ESC:
+            selecting = false;
+            break;
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    } while (selecting);
 }
