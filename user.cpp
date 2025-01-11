@@ -1114,7 +1114,7 @@ void User::editUser()
                 std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "Phone Number:" << RESET << std::endl;
                 std::cout << (selected == 3 ? "-> " : "   ") << (selected == 3 ? BG_YELLOW : "") << "Email:" << RESET << std::endl;
                 std::cout << (selected == 4 ? "-> " : "   ") << (selected == 4 ? BG_YELLOW : "") << "Address:" << RESET << std::endl;
-                std::cout << (selected == 5 ? "-> " : "   ") << (selected == 5 ? BG_YELLOW : "") << "Role:" << RESET << std::endl;
+                std::cout << (selected == 5 ? "-> " : "   ") << (selected == 5 ? BG_YELLOW : "") << "Role (1 for User, 2 for Admin, 3 for Superuser): " << RESET << std::endl;
                 std::cout << (selected == 6 ? "-> " : "   ") << (selected == 6 ? BG_YELLOW : "") << "Password:" << RESET << std::endl;
                 std::cout << (selected == 7 ? "-> " : "   ") << (selected == 7 ? BG_GREEN : "") << "Save and Exit" << RESET << std::endl;
 
@@ -1156,9 +1156,16 @@ void User::editUser()
                         user.setAddress(data);
                         break;
                     case 5:
-                        std::cout << "\x1b[25;10H";
-                        getline(std::cin, data);
-                        user.setRole(data);
+                        std::cout << "\x1b[25;55H";
+                        std::cin >> data;
+                        if (data == "1")
+                            user.setRole("User");
+                        else if (data == "2")
+                            user.setRole("Admin");
+                        else if (data == "3")
+                            user.setRole("Superuser");
+                        else
+                            std::cout << RED << "Invalid role!" << RESET << std::endl;
                         break;
                     case 6:
                         std::cout << "\x1b[26;14H";
