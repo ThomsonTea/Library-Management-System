@@ -5,19 +5,13 @@
 #include <string>
 #include <sstream>
 #include "user.h"
+#include <tabulate/table.hpp>
 #include "dbConnection.h"
 #include "tc.h"
 
-User::User() : con(nullptr) {}
+User::User(dbConnection* connection) : db(connection) {}
 
-User::~User()
-{
-    if (con)
-    {
-        delete con;
-        con = nullptr;
-    }
-}
+User::~User() = default;
 
 std::string User::getUserID()
 {
@@ -92,7 +86,7 @@ void User::setRole(std::string role)
     this->role = role;
 }
 
-bool User::userVerify(dbConnection db)
+bool User::userVerify()
 {
     while (true)
     {
@@ -123,7 +117,8 @@ bool User::userVerify(dbConnection db)
 
 bool User::isUser(const std::string& userId, const std::string& password)
 {
-    if (!db.getConnection()) {  // Make sure db connection is available
+
+    if (!db->getConnection()) {  // Make sure db connection is available
         std::cerr << "No database connection available!" << std::endl;
         return false;
     }
@@ -133,7 +128,7 @@ bool User::isUser(const std::string& userId, const std::string& password)
         std::string query = "SELECT * FROM User WHERE BINARY userID = ? AND BINARY password = ?";
 
         // Get the connection from dbConnection
-        sql::PreparedStatement* pstmt = db.getConnection()->prepareStatement(query);
+        sql::PreparedStatement* pstmt = db->getConnection()->prepareStatement(query);
 
         // Bind parameters to the prepared statement
         pstmt->setString(1, userId);
@@ -224,7 +219,7 @@ void User::registerUser()
         // Generate userID based on role
         char prefix = (role == "admin") ? 'A' : (role == "staff") ? 'S' : 'U';
         std::string query = "SELECT userID FROM User WHERE userID LIKE ? ORDER BY userID DESC LIMIT 1";
-        sql::PreparedStatement* pstmt = db.getConnection()->prepareStatement(query);
+        sql::PreparedStatement* pstmt = db->getConnection()->prepareStatement(query);
 
         // Set the prefix for the query
         pstmt->setString(1, std::string(1, prefix) + "%");
@@ -254,7 +249,7 @@ void User::registerUser()
 
         // Insert the new user into the database
         query = "INSERT INTO User (userID, name, ic, email, phoneNum, address, password, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        pstmt = db.getConnection()->prepareStatement(query);
+        pstmt = db->getConnection()->prepareStatement(query);
 
         pstmt->setString(1, userID);
         pstmt->setString(2, name);
@@ -287,7 +282,7 @@ void User::registerUser()
 
 void User::editProfile()
 {
-    if (!db.getConnection()) {  // Make sure db connection is available
+    if (!db->getConnection()) {  // Make sure db connection is available
         std::cerr << "No database connection available!" << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
         return;
@@ -351,7 +346,7 @@ void User::editProfile()
                 if (confirmKey == 13)
                 {
                     query = "UPDATE User SET name='" + data + "' WHERE userId='" + getUserID() + "'";
-                    db.executeQuery(query);
+                    db->executeQuery(query);
                 }
                 else
                 {
@@ -375,7 +370,7 @@ void User::editProfile()
                 if (confirmKey == 13)
                 {
                     query = "UPDATE User SET ic='" + data + "' WHERE userId='" + getUserID() + "'";
-                    db.executeQuery(query);
+                    db->executeQuery(query);
                 }
                 else
                 {
@@ -383,7 +378,7 @@ void User::editProfile()
                     std::cout << "\nReturning Back..." << std::endl;
                     std::this_thread::sleep_for(std::chrono::seconds(1));
                 }
-                db.executeQuery(query);
+                db->executeQuery(query);
                 break;
             case 3:
                 std::cout << "\x1b[10;1H";
@@ -400,7 +395,7 @@ void User::editProfile()
                 if (confirmKey == 13)
                 {
                     query = "UPDATE User SET phoneNum='" + data + "' WHERE userId='" + getUserID() + "'";
-                    db.executeQuery(query);
+                    db->executeQuery(query);
                 }
                 else
                 {
@@ -408,7 +403,7 @@ void User::editProfile()
                     std::cout << "\nReturning Back..." << std::endl;
                     std::this_thread::sleep_for(std::chrono::seconds(1));
                 }
-                db.executeQuery(query);
+                db->executeQuery(query);
                 break;
             case 4:
                 std::cout << "\x1b[10;1H";
@@ -425,7 +420,7 @@ void User::editProfile()
                 if (confirmKey == 13)
                 {
                     query = "UPDATE User SET email='" + data + "' WHERE userId='" + getUserID() + "'";
-                    db.executeQuery(query);
+                    db->executeQuery(query);
                 }
                 else
                 {
@@ -433,7 +428,7 @@ void User::editProfile()
                     std::cout << "\nReturning Back..." << std::endl;
                     std::this_thread::sleep_for(std::chrono::seconds(1));
                 }
-                db.executeQuery(query);
+                db->executeQuery(query);
                 break;
             case 5:
                 std::cout << "\x1b[10;1H";
@@ -450,7 +445,7 @@ void User::editProfile()
                 if (confirmKey == 13)
                 {
                     query = "UPDATE User SET address='" + data + "' WHERE userId='" + getUserID() + "'";
-                    db.executeQuery(query);
+                    db->executeQuery(query);
                 }
                 else
                 {
@@ -458,7 +453,7 @@ void User::editProfile()
                     std::cout << "\nReturning Back..." << std::endl;
                     std::this_thread::sleep_for(std::chrono::seconds(1));
                 }
-                db.executeQuery(query);
+                db->executeQuery(query);
                 break;
             case 0:
                 quitEditProfile = true;
@@ -534,7 +529,7 @@ void User::userProfile()
 
 void User::retrieveUserFromDB(const std::string& userID)
 {
-    if (!db.getConnection()) {  // Make sure db connection is available
+    if (!db->getConnection()) {  // Make sure db connection is available
         std::cerr << "No database connection available!" << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
         return;
@@ -544,7 +539,7 @@ void User::retrieveUserFromDB(const std::string& userID)
         std::string query = "SELECT * FROM User WHERE userID = ?";
 
         // Get the connection from dbConnection
-        sql::PreparedStatement* pstmt = db.getConnection()->prepareStatement(query);
+        sql::PreparedStatement* pstmt = db->getConnection()->prepareStatement(query);
         pstmt->setString(1, userID);          // Bind name
         
         sql::ResultSet* res = pstmt->executeQuery();
@@ -576,7 +571,7 @@ void User::retrieveUserFromDB(const std::string& userID)
 
 void User::changePassword()
 {
-    if (!db.getConnection()) {  // Make sure db connection is available
+    if (!db->getConnection()) {  // Make sure db connection is available
         std::cerr << "No database connection available!" << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
         return;
@@ -624,7 +619,7 @@ void User::changePassword()
         {
             std::string query = "UPDATE User SET password = ? WHERE userID = ? AND password = ?";
             // Get the connection from dbConnection
-            sql::PreparedStatement* pstmt = db.getConnection()->prepareStatement(query);
+            sql::PreparedStatement* pstmt = db->getConnection()->prepareStatement(query);
             pstmt->setString(1, newPassword);
             pstmt->setString(2, getUserID());
             pstmt->setString(3, oldPassword);

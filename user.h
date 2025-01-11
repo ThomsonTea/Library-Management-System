@@ -11,7 +11,7 @@
 class User
 {
 public:
-    User();
+    User(dbConnection* connection);
     ~User();
 
     std::string getUserID();
@@ -32,7 +32,7 @@ public:
     void setPassword(std::string password);
     void setRole(std::string role);
 
-    bool userVerify(dbConnection db);
+    bool userVerify();
     bool isUser(const std::string& userId, const std::string& password);
     void registerUser();
     void editProfile();
@@ -52,8 +52,7 @@ private:
     std::string password;
     std::string role;
 
-    dbConnection* con;
-    dbConnection db;
+    dbConnection* db;
 };
 
 #endif

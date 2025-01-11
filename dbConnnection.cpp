@@ -33,6 +33,7 @@ dbConnection::~dbConnection()
     if (con)
     {
         delete con;
+        con = nullptr; // Set the pointer to nullptr to prevent accidental use after deletion
         std::cout << "Database connection closed." << std::endl;
     }
 }

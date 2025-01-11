@@ -8,10 +8,7 @@
 class Book
 {
 public:
-	Book();
-	Book(const std::string& bookID, const std::string& title, const std::string& isbn,
-		const std::string& author, const std::string& publisher, const std::string& category,
-		int publicationYear, int quantity, const std::string& status, double price);
+	Book(dbConnection* connection);
 	~Book();
 
 	std::string getBookID();
@@ -39,7 +36,7 @@ public:
 	void libraryPrompt();
 	void retrieveBookFromDB(std::string bookId);
 	void addBook();
-	std::string generateBookID(dbConnection& db);
+	std::string generateBookID();
 private:
 	std::string bookID;
 	std::string title;
@@ -52,7 +49,6 @@ private:
 	std::string status;
 	double price;
 
-	dbConnection* con;
-	dbConnection db;
+	dbConnection* db;
 };
 #endif

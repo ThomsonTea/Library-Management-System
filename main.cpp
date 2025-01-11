@@ -8,9 +8,9 @@
 #include "tc.h"
 
 int main() {
-    dbConnection db;
-    User user;
-    Book book;
+    dbConnection* db = new dbConnection();
+    User user(db);
+    Book book(db);
     std::string userID, password;
     bool loggedIn = false;
     int selected = 0;  // Keeps track of which option is selected.
@@ -19,7 +19,7 @@ int main() {
     while (true) {
         // User login verification (you can define userVerify logic in the User class)
         while (!loggedIn) {
-            if (user.userVerify(db)) {
+            if (user.userVerify()) {
                 loggedIn = true;
             }
         }

@@ -6,17 +6,7 @@
 
 #include "book.h"
 
-Book::Book()
-{
-}
-
-Book::Book(const std::string& bookID, const std::string& title, const std::string& isbn,
-    const std::string& author, const std::string& publisher, const std::string& category,
-    int publicationYear, int quantity, const std::string& status, double price)
-    : bookID(bookID), title(title), isbn(isbn), author(author), publisher(publisher),
-    category(category), publicationYear(publicationYear), quantity(quantity),
-    status(status), price(price) 
-{}
+Book::Book(dbConnection* connection) : db(connection) {}
 
 Book::~Book()
 {}
@@ -123,7 +113,7 @@ void Book::setPrice(double price)
 
 void Book::retrieveBookFromDB(std::string bookId)
 {
-    if (!db.getConnection()) {  // Make sure db connection is available
+    if (!db->getConnection()) {  // Make sure db connection is available
         std::cerr << "No database connection available!" << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
         return;
@@ -133,7 +123,7 @@ void Book::retrieveBookFromDB(std::string bookId)
         std::string query = "SELECT * FROM Book WHERE userID = ?";
 
         // Get the connection from dbConnection
-        sql::PreparedStatement* pstmt = db.getConnection()->prepareStatement(query);
+        sql::PreparedStatement* pstmt = db->getConnection()->prepareStatement(query);
         pstmt->setString(1, bookID);          // Bind name
 
         sql::ResultSet* res = pstmt->executeQuery();
@@ -187,7 +177,7 @@ void Book::libraryPrompt()
 
         std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, press R to reset searching, or press Esc to quit.\n";
 
-        db.fetchAndDisplayData(query);
+        db->fetchAndDisplayData(query);
 
 
         char c = _getch(); // Use _getch() to get key press without waiting for enter.
@@ -302,11 +292,11 @@ void Book::addBook()
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
 
-        std::string bookID = generateBookID(db);
+        std::string bookID = generateBookID();
 
         std::string query = "INSERT INTO Book (bookID, isbn, title, category, author, publisher, publicationYear, quantity, status, price) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        std::unique_ptr<sql::PreparedStatement> pstmt(db.getConnection()->prepareStatement(query));
+        std::unique_ptr<sql::PreparedStatement> pstmt(db->getConnection()->prepareStatement(query));
 
         pstmt->setString(1, bookID);
         pstmt->setString(2, isbn);
@@ -331,10 +321,10 @@ void Book::addBook()
     
 }
 
-std::string Book::generateBookID(dbConnection& db)
+std::string Book::generateBookID()
 {
     std::string query = "SELECT bookID FROM Book ORDER BY bookID DESC LIMIT 1";
-    std::unique_ptr<sql::PreparedStatement> pstmt(db.getConnection()->prepareStatement(query));
+    std::unique_ptr<sql::PreparedStatement> pstmt(db->getConnection()->prepareStatement(query));
     std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
 
     if (res->next()) {
