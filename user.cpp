@@ -7,6 +7,7 @@
 #include "user.h"
 #include <tabulate/table.hpp>
 #include "dbConnection.h"
+#include "table.h"
 #include "tc.h"
 
 User::User(dbConnection* connection) : db(connection) {}
@@ -659,8 +660,7 @@ void User::changePassword()
             if (rowsAffected > 0)
             {
                 std::cout << GREEN << "\n\nPassword updated successfully for user with ID: " << CYAN << getUserID() << RESET << std::endl;
-                std::cout << "\nPress any key to continue..." << std::endl;
-                _getch();
+                system("pause");
             }
             else
             {
@@ -740,7 +740,6 @@ void User::userManagementMenu()
 
         std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, or press Esc to quit.\n";
 
-        db->fetchAndDisplayData("SELECT userID, name, ic, phoneNum, email, address, role FROM User LIMIT 10");
         // Capture user input for navigation
         char c = _getch(); // Use _getch() to get key press without waiting for enter.
         std::string exitpass;
@@ -761,7 +760,7 @@ void User::userManagementMenu()
                 registerUser();
                 break;
             case 2:
-                //Edit User
+                editUser();
                 break;
             case 3:
                 deleteUser();
@@ -802,7 +801,7 @@ void User::deleteUser()
         std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Name: " << RESET << std::endl;
         std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "IC: " << RESET << std::endl;
 
-        std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, press R to reset searching, or press Esc to quit.\n";
+        std::cout << "\n\n\n\nUse arrow keys to navigate, press Enter to select, press R to reset searching, or press Esc to quit.\n";
 
         if (userSelected && !deleteConfirmed)
         {
@@ -832,7 +831,7 @@ void User::deleteUser()
                 }
                 userSelected = false;  // Reset user selection
                 deleteConfirmed = false; // Reset passkey confirmation
-                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User LIMIT 10"; // Reset the searching
+                std::cout << YELLOW << "Press \"R\" to Refresh the list." << std::endl;
                 break;
 
             case KEY_ESC:  // Cancel deletion with Esc
@@ -863,6 +862,11 @@ void User::deleteUser()
                 std::cout << "\x1b[4;8H";
                 std::cin >> data;
                 query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE userID='" + data + "'";
+                if (!db->recordExists(query)) {
+                    std::cout << "\x1b[4;8H" << RED << "Error: User with ID '" << data << "' does not exist." << RESET << std::endl;
+                    std::cin.ignore();
+                    break;
+                }
                 selectedSearchCriteria = "userID";  // Set search criteria to userID
                 userSelected = true;
                 break;
@@ -870,6 +874,11 @@ void User::deleteUser()
                 std::cout << "\x1b[5;10H";
                 std::cin >> data;
                 query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE name='" + data + "'";
+                if (!db->recordExists(query)) {
+                    std::cout << "\x1b[5;10H" << RED << "Error: User with name '" << data << "' does not exist." << RESET << std::endl;
+                    std::cin.ignore();
+                    break;
+                }
                 selectedSearchCriteria = "name";  // Set search criteria to name
                 userSelected = true;
                 break;
@@ -877,6 +886,11 @@ void User::deleteUser()
                 std::cout << "\x1b[6;8H";
                 std::cin >> data;
                 query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE ic='" + data + "'";
+                if (!db->recordExists(query)) {
+                    std::cout << "\x1b[6;8H" << RED << "Error: User with IC '" << data << "' does not exist." << RESET << std::endl;
+                    std::cin.ignore();
+                    break;
+                }
                 selectedSearchCriteria = "ic";  // Set search criteria to IC
                 userSelected = true;
                 break;
@@ -889,8 +903,10 @@ void User::deleteUser()
             selecting = false;
             break;
         }
+
     } while (selecting);  // End of loop
 }
+
 
 void User::searchUser()
 {
@@ -977,5 +993,205 @@ void User::searchUser()
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    } while (selecting);
+}
+
+void User::editUser()
+{
+    int selected = 0;  // Keeps track of which menu option is selected.
+    bool selecting = true;  // Controls the main loop for searching and selecting a user.
+    std::string data;  // User input for search.
+    std::string searchColumn = "";  // Column to search by (userID, name, or IC).
+    std::string query;  // Query for database search.
+    User user(getDB());  // Object to hold user data during editing.
+
+    do
+    {
+        system("cls");  // Clear the screen.
+
+        std::cout << CYAN << "Edit User\n" << RESET << std::endl;
+        std::cout << "Search by:\n";
+        std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "ID: " << RESET << std::endl;
+        std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Name: " << RESET << std::endl;
+        std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "IC: " << RESET << std::endl;
+        std::cout << "\nUse arrow keys to navigate, press Enter to select, or Esc to quit.\n";
+
+        char c = _getch();  // Get user input.
+        switch (c)
+        {
+        case KEY_UP:
+            selected = (selected - 1 + 3) % 3;  // Navigate up in the menu.
+            break;
+        case KEY_DOWN:
+            selected = (selected + 1) % 3;  // Navigate down in the menu.
+            break;
+        case KEY_ENTER:
+        {
+            switch (selected)
+            {
+            case 0:
+                std::cout << "\x1b[4;8H";
+                std::cin >> data;
+                searchColumn = "userID";
+                break;
+            case 1:
+                std::cout << "\x1b[5;10H";
+                std::cin >> data;
+                searchColumn = "name";
+                break;
+            case 2:
+                std::cout << "\x1b[6;8H";
+                std::cin >> data;
+                searchColumn = "ic";
+                break;
+            default:
+                std::cout << RED << "Invalid selection!" << RESET << std::endl;
+                continue;
+            }
+
+            query = "SELECT * FROM User WHERE " + searchColumn + " = '" + data + "'";
+            sql::Statement* stmt = nullptr;
+            sql::ResultSet* res = nullptr;
+
+            if (!db->recordExists(query))
+            {
+                std::cout << "\x1b[4;8H" << "\033[K" <<  RED << "Error: User not found!" << RESET << std::endl;
+                continue;
+            }
+
+            try
+            {
+                stmt = db->getConnection()->createStatement();
+                res = stmt->executeQuery(query);
+
+                if (res->next())
+                {
+                    user.setUserID(res->getString("userID"));
+                    user.setName(res->getString("name"));
+                    user.setIc(res->getString("ic"));
+                    user.setPhoneNum(res->getString("phoneNum"));
+                    user.setEmail(res->getString("email"));
+                    user.setAddress(res->getString("address"));
+                    user.setRole(res->getString("role"));
+                }
+            }
+            catch (const sql::SQLException& e)
+            {
+                std::cerr << "SQL error: " << e.what() << std::endl;
+            }
+
+            // Clean up resources
+            delete res;
+            delete stmt;
+
+            // Edit loop.
+            bool editing = true;
+            while (editing)
+            {
+
+                system("cls");
+                tabulate::Table table;
+                std::cout << CYAN << "Edit User Details\n" << RESET << std::endl;
+
+                table.add_row({ "User ID", user.getUserID() });
+                table.add_row({ "Name", user.getName() });
+                table.add_row({ "IC", user.getIc() });
+                table.add_row({ "Phone Number", user.getPhoneNum() });
+                table.add_row({ "Email", user.getEmail() });
+                table.add_row({ "Address", user.getAddress() });
+                table.add_row({ "Role", user.getRole() });
+                table.add_row({ "Password", user.getPassword() });
+
+                paraTableFormat(table);
+
+                std::cout << "\x1b[18;1H";
+                std::cout << "\x1b[K";
+                std::cout << "\x1b[0J";
+
+                std::cout << "\nSelect the field to edit:\n";
+                std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "Name:" << RESET << std::endl;
+                std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "IC:" << RESET << std::endl;
+                std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "Phone Number:" << RESET << std::endl;
+                std::cout << (selected == 3 ? "-> " : "   ") << (selected == 3 ? BG_YELLOW : "") << "Email:" << RESET << std::endl;
+                std::cout << (selected == 4 ? "-> " : "   ") << (selected == 4 ? BG_YELLOW : "") << "Address:" << RESET << std::endl;
+                std::cout << (selected == 5 ? "-> " : "   ") << (selected == 5 ? BG_YELLOW : "") << "Role:" << RESET << std::endl;
+                std::cout << (selected == 6 ? "-> " : "   ") << (selected == 6 ? BG_YELLOW : "") << "Password:" << RESET << std::endl;
+                std::cout << (selected == 7 ? "-> " : "   ") << (selected == 7 ? BG_GREEN : "") << "Save and Exit" << RESET << std::endl;
+
+                char fieldInput = _getch();
+                switch (fieldInput)
+                {
+                case KEY_UP:
+                    selected = (selected - 1 + 8) % 8;
+                    break;
+                case KEY_DOWN:
+                    selected = (selected + 1) % 8;
+                    break;
+                case KEY_ENTER:
+                    switch (selected)
+                    {
+                    case 0:
+                        std::cout << "\x1b[20;10H";
+                        getline(std::cin, data);
+                        user.setName(data);
+                        break;
+                    case 1:
+                        std::cout << "\x1b[21;8H";
+                        getline(std::cin, data);
+                        user.setIc(data);
+                        break;
+                    case 2:
+                        std::cout << "\x1b[22;18H";
+                        getline(std::cin, data);
+                        user.setPhoneNum(data);
+                        break;
+                    case 3:
+                        std::cout << "\x1b[23;11H";
+                        getline(std::cin, data);
+                        user.setEmail(data);
+                        break;
+                    case 4:
+                        std::cout << "\x1b[24;11H";
+                        getline(std::cin, data);
+                        user.setAddress(data);
+                        break;
+                    case 5:
+                        std::cout << "\x1b[25;10H";
+                        getline(std::cin, data);
+                        user.setRole(data);
+                        break;
+                    case 6:
+                        std::cout << "\x1b[26;14H";
+                        getline(std::cin, data);
+                        user.setPassword(data);
+                        break;
+                    case 7:
+                        query = "UPDATE User SET "
+                            "name = '" + user.getName() + "', "
+                            "ic = '" + user.getIc() + "', "
+                            "phoneNum = '" + user.getPhoneNum() + "', "
+                            "email = '" + user.getEmail() + "', "
+                            "address = '" + user.getAddress() + "', "
+                            "role = '" + user.getRole() + "' "
+                            "WHERE userID = '" + user.getUserID() + "'";
+                        db->executeQuery(query);
+                        std::cout << GREEN << "User " << user.getName() << "updated successfully!" << RESET << std::endl;
+                        system("pause");
+                        editing = false;
+                        break;
+                    }
+                    break;
+                case KEY_ESC:
+                    editing = false;
+                    break;
+                }
+            }
+            selecting = false;  // Exit main loop after editing.
+            break;
+        }
+        case KEY_ESC:
+            selecting = false;
+            break;
+        }
     } while (selecting);
 }

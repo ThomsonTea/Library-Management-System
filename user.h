@@ -51,6 +51,7 @@ public:
     void userManagementMenu();
     void deleteUser();
     void searchUser();
+    void editUser();
     std::string hiddenInput();
 
 private:

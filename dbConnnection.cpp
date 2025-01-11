@@ -142,3 +142,18 @@ std::string dbConnection::extractUserIDFromQuery(const std::string& query)
 
     return userID;
 }
+
+bool dbConnection::recordExists(const std::string& query) {
+    try {
+        sql::Statement* stmt = con->createStatement();
+        sql::ResultSet* res = stmt->executeQuery(query);
+        bool exists = res->next();
+        delete res;
+        delete stmt;
+        return exists;
+    }
+    catch (sql::SQLException& e) {
+        std::cerr << "Error checking record existence: " << e.what() << std::endl;
+        return false;
+    }
+}
