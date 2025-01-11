@@ -175,221 +175,6 @@ bool User::isUser(const std::string& userId, const std::string& password)
     }
 }
 
-void User::registerUser()
-{
-    try
-    {
-        system("cls");
-        User newUser(getDB());
-
-        std::string username, password, confirmPassword, email, role, ic, phoneNum, address;
-
-        std::cout << CYAN << "Register User" << RESET << std::endl;
-
-        // Prompt for username
-        bool usernameExists = false;
-        do
-        {
-            std::cout << "Username: ";
-            std::cin.ignore();
-            std::getline(std::cin, username);
-
-            // Check if username exists in the database
-            std::string query = "SELECT COUNT(*) FROM User WHERE name = ?";
-            sql::PreparedStatement* pstmt = db->getConnection()->prepareStatement(query);
-            pstmt->setString(1, username);
-            sql::ResultSet* res = pstmt->executeQuery();
-
-            res->next();
-            if (res->getInt(1) > 0) // If a record is found, username exists
-            {
-                std::cout << RED << "Username already exists. Please choose a different one." << RESET << std::endl;
-                std::this_thread::sleep_for(std::chrono::seconds(2));
-                std::cout << "\x1b[2;1H";
-                std::cout << "\x1b[K";
-                std::cout << "\x1b[0J";
-                usernameExists = true;
-            }
-            else
-            {
-                newUser.setName(username);
-                usernameExists = false;
-            }
-
-            delete pstmt;
-            delete res;
-
-        } while (usernameExists);
-
-        // Prompt for password and confirmation
-        bool passwordMatch = false;
-        do
-        {
-            std::cout << "Password: ";
-            password = hiddenInput();
-            std::cout << "Confirm Password: ";
-            confirmPassword = hiddenInput();
-
-            if (password == confirmPassword)
-            {
-                newUser.setPassword(password);
-                passwordMatch = true;
-            }
-            else
-            {
-                std::cout << RED << "Passwords do not match. Please try again." << RESET << std::endl;
-                std::this_thread::sleep_for(std::chrono::seconds(2));
-                std::cout << "\x1b[3;1H";
-                std::cout << "\x1b[K";
-                std::cout << "\x1b[0J";
-            }
-
-        } while (!passwordMatch);
-
-        // Prompt for email
-        std::cout << "Email: ";
-        std::getline(std::cin, email);
-        newUser.setEmail(email);
-
-        // Prompt for IC
-        bool icExists = false;
-        do
-        {
-            std::cout << "IC: ";
-            std::getline(std::cin, ic);
-
-            // Check if IC exists in the database
-            std::string query = "SELECT COUNT(*) FROM User WHERE ic = ?";
-            sql::PreparedStatement* pstmt = db->getConnection()->prepareStatement(query);
-            pstmt->setString(1, ic);
-            sql::ResultSet* res = pstmt->executeQuery();
-
-            res->next();
-            if (res->getInt(1) > 0) // If a record is found, IC exists
-            {
-                std::cout << RED << "IC already exists. Please choose a different one." << RESET << std::endl;
-                std::this_thread::sleep_for(std::chrono::seconds(2));
-                std::cout << "\x1b[5;1H";
-                std::cout << "\x1b[K";
-                std::cout << "\x1b[0J";
-                icExists = true;
-            }
-            else
-            {
-                newUser.setIc(ic);
-                icExists = false;
-            }
-
-            delete pstmt;
-            delete res;
-
-        } while (icExists);
-
-        // Prompt for phone number
-        std::cout << "Phone Number: ";
-        std::getline(std::cin, phoneNum);
-        newUser.setPhoneNum(phoneNum);
-
-        // Prompt for address
-        std::cout << "Address: ";
-        std::getline(std::cin, address);
-        newUser.setAddress(address);
-
-        // Prompt for role selection with validation
-        int roleChoice;
-        do
-        {
-            std::cout << "Select Role [1 for User, 2 for Admin, 3 for Staff]: ";
-            std::cin >> roleChoice;
-
-            switch (roleChoice)
-            {
-            case 1:
-                role = "user";
-                break;
-            case 2:
-                role = "admin";
-                break;
-            case 3:
-                role = "staff";
-                break;
-            default:
-                std::cout << RED << "Invalid choice. Please select 1, 2, or 3." << RESET << std::endl;
-                std::this_thread::sleep_for(std::chrono::seconds(3));
-                std::cout << "\x1b[8;1H";
-                std::cout << "\x1b[K";
-                std::cout << "\x1b[0J";
-                break;
-            }
-            newUser.setRole(role);
-        } while (roleChoice < 1 || roleChoice > 3);
-
-        // Generate userID based on role
-        char prefix = (role == "admin") ? 'A' : (role == "staff") ? 'S' : 'U';
-        std::string query = "SELECT userID FROM User WHERE userID LIKE ? ORDER BY userID DESC LIMIT 1";
-        sql::PreparedStatement* pstmt = db->getConnection()->prepareStatement(query);
-
-        // Set the prefix for the query
-        pstmt->setString(1, std::string(1, prefix) + "%");
-        sql::ResultSet* res = pstmt->executeQuery();
-
-        if (res->next())
-        {
-            // Get the last userID and increment the numeric part
-            std::string lastUserID = res->getString("userID");
-            int lastIDNumber = std::stoi(lastUserID.substr(1)); // Remove prefix and convert to integer
-            int newIDNumber = lastIDNumber + 1;
-
-            // Format the new userID with leading zeros
-            std::ostringstream oss;
-            oss << prefix << std::setw(8) << std::setfill('0') << newIDNumber;
-            std::string id = oss.str();
-            newUser.setUserID(id);
-        }
-        else
-        {
-            // Start with the first userID if none exist
-            std::string id = std::string(1, prefix) + "00000001";
-            newUser.setUserID(id);
-        }
-
-        // Clean up
-        delete pstmt;
-        delete res;
-
-        // Insert the new user into the database
-        query = "INSERT INTO User (userID, name, ic, email, phoneNum, address, password, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        pstmt = db->getConnection()->prepareStatement(query);
-
-        pstmt->setString(1, newUser.getUserID());
-        pstmt->setString(2, newUser.getName());
-        pstmt->setString(3, newUser.getIc());
-        pstmt->setString(4, newUser.getEmail());
-        pstmt->setString(5, newUser.getPhoneNum());
-        pstmt->setString(6, newUser.getAddress());
-        pstmt->setString(7, newUser.getPassword());
-        pstmt->setString(8, newUser.getRole());
-
-        pstmt->executeUpdate();
-
-        delete pstmt;
-
-        std::cout << GREEN << "User registered successfully with userID: " << RESET << newUser.getUserID() << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(3));
-    }
-    catch (sql::SQLException& e)
-    {
-        std::cerr << "Database error while registering user: " << e.what() << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(2));
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << "Unexpected error: " << e.what() << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(2));
-    }
-}
-
-
 void User::editProfile()
 {
     if (!db->getConnection()) {  // Make sure db connection is available
@@ -1281,3 +1066,236 @@ void User::editUser()
         }
     } while (selecting);
 }
+
+void User::registerUser()
+{
+    try
+    {
+        dbConnection* db = new dbConnection();
+        User newUser(db);
+        int selected = 0;  // Keeps track of which option is selected.
+        bool selecting = true;
+        std::string checkQuery;
+        std::string query;
+        std::string password;
+        std::string confirmPassword;
+        sql::PreparedStatement* pstmt = nullptr;  // Declare outside the switch.
+        sql::ResultSet* res = nullptr;  // Declare outside the switch.
+        
+        do
+        {
+            system("cls");
+            std::string data;
+            char prefix;
+            int roleChoice;
+            std::cout << CYAN << "Welcome to Library !\n" << RESET << std::endl;
+
+            tabulate::Table table;
+            table.add_row({ "Name", newUser.getName() });
+            table.add_row({ "IC", newUser.getIc() });
+            table.add_row({ "Phone Number", newUser.getPhoneNum() });
+            table.add_row({ "Email", newUser.getEmail() });
+            table.add_row({ "Address", newUser.getAddress() });
+            table.add_row({ "Role", newUser.getRole() });
+            table.add_row({ "Password", newUser.getPassword().empty() ? "" : "[Hidden]" });
+
+            paraTableFormat(table);
+
+            std::cout << "Insert Data:" << std::endl;
+            std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "Name: " << RESET << std::endl;
+            std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "IC: " << RESET << std::endl;
+            std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "Phone Number: " << RESET << std::endl;
+            std::cout << (selected == 3 ? "-> " : "   ") << (selected == 3 ? BG_YELLOW : "") << "Email: " << RESET << std::endl;
+            std::cout << (selected == 4 ? "-> " : "   ") << (selected == 4 ? BG_YELLOW : "") << "Address: " << RESET << std::endl;
+            std::cout << (selected == 5 ? "-> " : "   ") << (selected == 5 ? BG_YELLOW : "") << "Password: " << RESET << std::endl;
+            std::cout << (selected == 6 ? "-> " : "   ") << (selected == 6 ? BG_YELLOW : "") << "Confirmed Password: " << RESET << std::endl;
+            std::cout << (selected == 7 ? "-> " : "   ") << (selected == 7 ? BG_YELLOW : "") << "Select Role [1 for User, 2 for Admin, 3 for Staff]: " << RESET << std::endl;
+            std::cout << (selected == 8 ? "-> " : "   ") << (selected == 8 ? BG_GREEN : "") << "Save and Exit " << RESET << std::endl;
+
+            std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, or press Esc to quit.\n";
+
+            char c = _getch(); // Use _getch() to get key press without waiting for enter.
+
+            switch (c) {
+            case KEY_UP:
+                selected = (selected - 1 + 9) % 9; // Wrap around to the last option if at the top.
+                break;
+            case KEY_DOWN:
+                selected = (selected + 1) % 9; // Wrap around to the first option if at the bottom.
+                break;
+            case KEY_ENTER:
+                switch (selected) {
+                case 0:
+                    std::cout << "\x1b[19;10H";
+                    std::getline(std::cin, data);
+
+                    // Check if username exists in the database
+                    checkQuery = "SELECT COUNT(*) FROM User WHERE name = ?";
+                    pstmt = db->getConnection()->prepareStatement(checkQuery);
+                    pstmt->setString(1, data);
+                    res = pstmt->executeQuery();
+
+                    res->next();
+                    if (res->getInt(1) > 0) // If a record is found, username exists
+                    {
+                        std::cout << RED << "Username already exists. Please choose a different one." << RESET << std::endl;
+                        std::this_thread::sleep_for(std::chrono::seconds(2));
+                        std::cout << "\x1b[2;1H";
+                        std::cout << "\x1b[K";
+                        std::cout << "\x1b[0J";
+                    }
+                    else
+                    {
+                        newUser.setName(data);
+                    }
+                    break;
+                case 1:
+                    std::cout << "\x1b[20;8H";
+                    std::getline(std::cin, ic);
+
+                    // Check if IC exists in the database
+                    checkQuery = "SELECT COUNT(*) FROM User WHERE ic = ?";
+                    pstmt = db->getConnection()->prepareStatement(checkQuery);
+                    pstmt->setString(1, ic);
+                    res = pstmt->executeQuery();
+
+                    res->next();
+                    if (res->getInt(1) > 0) // If a record is found, IC exists
+                    {
+                        std::cout << RED << "IC already exists. Please choose a different one." << RESET << std::endl;
+                        std::this_thread::sleep_for(std::chrono::seconds(2));
+                        std::cout << "\x1b[5;1H";
+                        std::cout << "\x1b[K";
+                        std::cout << "\x1b[0J";
+                    }
+                    else
+                    {
+                        newUser.setIc(ic);
+                    }
+
+                    break;
+                case 2:
+                    std::cout << "\x1b[21;18H";
+                    getline(std::cin, data);
+                    newUser.setPhoneNum(data);
+                    break;
+                case 3:
+                    std::cout << "\x1b[22;11H";
+                    std::getline(std::cin, data);
+                    newUser.setEmail(data);
+                    break;
+                case 4:
+                    std::cout << "\x1b[23;13H";
+                    getline(std::cin, data);
+                    newUser.setAddress(data);
+                    break;
+                case 5:
+                    std::cout << "\x1b[24;14H";
+                    data = hiddenInput();
+                    password = data;  // Set the password
+                    break;
+                case 6:
+                    std::cout << "\x1b[25;24H";
+                    confirmPassword = hiddenInput();
+                    if (password != confirmPassword) {
+                        std::cout << RED << "Passwords do not match. Please try again." << RESET << std::endl;
+                        std::this_thread::sleep_for(std::chrono::seconds(2));
+                        std::cout << "\x1b[0J";  // Clear the console
+                    }
+                    else {
+                        newUser.setPassword(password);
+                    }
+                    break;
+                case 7:
+                    std::cout << "\x1b[26;55H";
+                    std::cout << "";
+                    std::cin >> roleChoice;
+
+                    switch (roleChoice)
+                    {
+                    case 1:
+                        data = "user";
+                        break;
+                    case 2:
+                        data = "admin";
+                        break;
+                    case 3:
+                        data = "staff";
+                        break;
+                    default:
+                        std::cout << RED << "Invalid choice. Please select 1, 2, or 3." << RESET << std::endl;
+                        std::this_thread::sleep_for(std::chrono::seconds(3));
+                        std::cout << "\x1b[8;1H";
+                        std::cout << "\x1b[K";
+                        std::cout << "\x1b[0J";
+                        break;
+                    }
+                    newUser.setRole(data);
+                    break;
+                case 8:
+                    prefix = (newUser.getRole() == "admin") ? 'A' : (role == "staff") ? 'S' : 'U';
+                    query = "SELECT userID FROM User WHERE userID LIKE ? ORDER BY userID DESC LIMIT 1";
+                    pstmt = db->getConnection()->prepareStatement(query);
+
+                    // Set the prefix for the query
+                    pstmt->setString(1, std::string(1, prefix) + "%");
+                    res = pstmt->executeQuery();
+
+                    if (res->next())
+                    {
+                        // Get the last userID and increment the numeric part
+                        std::string lastUserID = res->getString("userID");
+                        int lastIDNumber = std::stoi(lastUserID.substr(1)); // Remove prefix and convert to integer
+                        int newIDNumber = lastIDNumber + 1;
+
+                        // Format the new userID with leading zeros
+                        std::ostringstream oss;
+                        oss << prefix << std::setw(8) << std::setfill('0') << newIDNumber;
+                        std::string id = oss.str();
+                        newUser.setUserID(id);
+                    }
+                    else
+                    {
+                        // Start with the first userID if none exist
+                        std::string id = std::string(1, prefix) + "00000001";
+                        newUser.setUserID(id);
+                    }
+
+                    // Insert the new user into the database
+                    query = "INSERT INTO User (userID, name, ic, email, phoneNum, address, password, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                    pstmt = db->getConnection()->prepareStatement(query);
+
+                    pstmt->setString(1, newUser.getUserID());
+                    pstmt->setString(2, newUser.getName());
+                    pstmt->setString(3, newUser.getIc());
+                    pstmt->setString(4, newUser.getEmail());
+                    pstmt->setString(5, newUser.getPhoneNum());
+                    pstmt->setString(6, newUser.getAddress());
+                    pstmt->setString(7, newUser.getPassword());
+                    pstmt->setString(8, newUser.getRole());
+
+                    pstmt->executeUpdate();
+                    std::cout << GREEN << "User registered successfully with userID: " << RESET << newUser.getUserID() << std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(3));
+                    break;
+                default:
+                    std::cout << "\nInvalid Input, please try again..." << std::endl;
+                    break;
+                }
+                break;
+            case KEY_ESC:
+                selecting = false;  // Exit the loop when ESC is pressed.
+                break;
+            }
+        } while (selecting);
+    }catch (const std::exception& e)
+    {
+        std::cerr << "Error: " << e.what() << std::endl;
+        system("pause");
+    }
+    catch (sql::SQLException& e) {
+        std::cerr << "Error executing insert query: " << e.what() << std::endl;
+        system("pause");
+    }
+}
+
