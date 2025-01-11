@@ -136,11 +136,13 @@
     <ClCompile Include="book.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="dbConnnection.cpp" />
+    <ClCompile Include="table.cpp" />
     <ClCompile Include="user.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="book.h" />
     <ClInclude Include="dbConnection.h" />
+    <ClInclude Include="table.h" />
     <ClInclude Include="tc.h" />
     <ClInclude Include="user.h" />
   </ItemGroup>

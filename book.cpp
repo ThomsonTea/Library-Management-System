@@ -15,52 +15,52 @@ Book::~Book()
 
 std::string Book::getBookID()
 {
-    return this->bookID;
+    return bookID;
 }
 
 std::string Book::getTitle()
 {
-    return this->title;
+    return title;
 }
 
 std::string Book::getISBN()
 {
-    return this->isbn;
+    return isbn;
 }
 
 std::string Book::getAuthor()
 {
-    return this->author;
+    return author;
 }
 
 std::string Book::getPublisher()
 {
-    return this->publisher;
+    return publisher;
 }
 
 std::string Book::getCategory()
 {
-    return this->category;
+    return category;
 }
 
 int Book::getPublicationYear()
 {
-    return this->publicationYear;
+    return publicationYear;
 }
 
 int Book::getQuantity()
 {
-    return this->quantity;
+    return quantity;
 }
 
 std::string Book::getStatus()
 {
-    return this->status;
+    return status;
 }
 
 double Book::getPrice()
 {
-    return this->price;
+    return price;
 }
 
 void Book::setBookID(std::string bookID)

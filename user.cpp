@@ -11,51 +11,63 @@
 
 User::User(dbConnection* connection) : db(connection) {}
 
+User::User(const std::string& userID, const std::string& name, const std::string& ic, const std::string& phoneNum, const std::string& email, const std::string& address, const std::string& password, const std::string& role)
+{
+    this->userID = userID;
+    this->name = name;
+    this->ic = ic;
+    this->phoneNum = phoneNum;
+    this->email = email;
+    this->address = address;
+    this->password = password;
+    this->role = role;
+}
+
 User::~User() = default;
 
 std::string User::getUserID()
 {
-    return this->userID;
+    return userID;
 }
 
 std::string User::getName()
 {
-    return this->name;
+    return name;
 }
 
 std::string User::getIc()
 {
-    return this->ic;
+    return ic;
 }
 
 std::string User::getPhoneNum()
 {
-    return this->phoneNum;
+    return phoneNum;
 }
 
 std::string User::getEmail()
 {
-    return this->email;
+    return email;
 }
 
 std::string User::getAddress()
 {
-    return this->address;
+    return address;
 }
 
 std::string User::getPassword()
 {
-    return this->password;
+    return password;
 }
 
 std::string User::getRole()
 {
-    return this->role;
+    return role;
 }
 
 dbConnection* User::getDB()
 {
-    return this->db;
+    return db;
 }
 
 void User::setUserID(std::string userID)
@@ -728,16 +740,16 @@ void User::userManagementMenu()
 
         std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, or press Esc to quit.\n";
 
-        db->fetchAndDisplayData("SELECT userID, name, ic, phoneNum, email, address, role FROM User ");
+        db->fetchAndDisplayData("SELECT userID, name, ic, phoneNum, email, address, role FROM User LIMIT 10");
         // Capture user input for navigation
         char c = _getch(); // Use _getch() to get key press without waiting for enter.
         std::string exitpass;
         switch (c) {
         case KEY_UP:
-            selected = (selected - 1 + 3) % 3; // Wrap around to the last option if at the top.
+            selected = (selected - 1 + 4) % 4; // Wrap around to the last option if at the top.
             break;
         case KEY_DOWN:
-            selected = (selected + 1) % 3; // Wrap around to the first option if at the bottom.
+            selected = (selected + 1) % 4; // Wrap around to the first option if at the bottom.
             break;
         case KEY_ENTER:
             switch (selected) 
@@ -752,7 +764,7 @@ void User::userManagementMenu()
                 //Edit User
                 break;
             case 3:
-                //Delete User
+                deleteUser();
                 break;
             default:
                 std::cout << "\nInvalid Input, please try again..." << std::endl;
@@ -770,14 +782,121 @@ void User::userManagementMenu()
 
 void User::deleteUser()
 {
+    int selected = 0;  // Keeps track of which option is selected.
+    bool selecting = true;
+    bool userSelected = false;  // Flag to track if a user is selected for deletion
+    bool deleteConfirmed = false;  // Flag to track if deletion is confirmed
+    std::string query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User LIMIT 10";
+    std::string deletePassKey = "CONFIRM"; // Store name of the selected user (for passkey confirmation)
+    std::string selectedSearchCriteria = ""; // To store the search criterion (name or IC or userID)
 
+    std::string data; // To store user input for search
+
+    do
+    {
+        system("cls");  // Clear screen to start fresh
+
+        std::cout << CYAN << "Welcome to Library !\n" << RESET << std::endl;
+        std::cout << "Search by:\n";
+        std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "ID: " << RESET << std::endl;
+        std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Name: " << RESET << std::endl;
+        std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "IC: " << RESET << std::endl;
+
+        std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, press R to reset searching, or press Esc to quit.\n";
+
+        if (userSelected && !deleteConfirmed)
+        {
+            // Ask user to confirm deletion by pressing Enter, or Esc to cancel
+            std::cout << GREEN << "Press Enter to confirm deletion, or Esc to cancel." << RESET << std::endl;
+        }
+
+        db->fetchAndDisplayData(query);  // Fetch and display data
+
+        if (userSelected && !deleteConfirmed)  // If a user is selected but not confirmed for deletion
+        {
+            char c = _getch(); // Use _getch() to get key press without waiting for enter.
+            std::string deleteQuery = "DELETE FROM User WHERE " + selectedSearchCriteria + "='" + data + "'";
+            std::string enteredPasskey;
+            switch (c)
+            {
+            case KEY_ENTER:  // Confirm deletion with Enter
+                std::cout << GREEN << "Please enter the \"CONFIRM\" to confirm deletion : " << RESET;
+                std::cin >> enteredPasskey;
+                if (enteredPasskey == deletePassKey) {
+                    // Perform the delete operation here based on the selected search criteria
+                    db->executeQuery(deleteQuery);
+                    std::cout << GREEN << "User deleted successfully!" << RESET << std::endl;
+                }
+                else {
+                    std::cout << RED << "Incorrect passkey!" << RESET << std::endl;
+                }
+                userSelected = false;  // Reset user selection
+                deleteConfirmed = false; // Reset passkey confirmation
+                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User LIMIT 10"; // Reset the searching
+                break;
+
+            case KEY_ESC:  // Cancel deletion with Esc
+                std::cout << RED << "Deletion cancelled." << RESET << std::endl;
+                userSelected = false;  // Reset user selection
+                deleteConfirmed = false; // Reset deletion confirmation
+                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User LIMIT 10"; // Reset the searching
+                break;
+            }
+        }
+
+        char c = _getch(); // Use _getch() to get key press without waiting for enter.
+        switch (c)
+        {
+        case KEY_UP:
+            selected = (selected - 1 + 3) % 3; // Wrap around to the last option if at the top.
+            break;
+        case KEY_DOWN:
+            selected = (selected + 1) % 3; // Wrap around to the first option if at the bottom.
+            break;
+        case KEY_UPPER_R:
+        case KEY_LOWER_R:
+            query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User LIMIT 10"; // Reset the searching
+            break;
+        case KEY_ENTER:
+            switch (selected) {
+            case 0:
+                std::cout << "\x1b[4;8H";
+                std::cin >> data;
+                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE userID='" + data + "'";
+                selectedSearchCriteria = "userID";  // Set search criteria to userID
+                userSelected = true;
+                break;
+            case 1:
+                std::cout << "\x1b[5;10H";
+                std::cin >> data;
+                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE name='" + data + "'";
+                selectedSearchCriteria = "name";  // Set search criteria to name
+                userSelected = true;
+                break;
+            case 2:
+                std::cout << "\x1b[6;8H";
+                std::cin >> data;
+                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE ic='" + data + "'";
+                selectedSearchCriteria = "ic";  // Set search criteria to IC
+                userSelected = true;
+                break;
+            default:
+                std::cout << "\nInvalid Input, please try again..." << std::endl;
+                break;
+            }
+            break;
+        case KEY_ESC:
+            selecting = false;
+            break;
+        }
+    } while (selecting);  // End of loop
 }
 
 void User::searchUser()
 {
     int selected = 0;  // Keeps track of which option is selected.
     bool selecting = true;
-    std::string query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User";
+    std::string query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User LIMIT 10";
     do
     {
         system("cls");
@@ -808,7 +927,7 @@ void User::searchUser()
             break;
         case KEY_UPPER_R:
         case KEY_LOWER_R:
-            query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User"; // Reset the searching
+            query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User LIMIT 10"; // Reset the searching
             break;
         case KEY_ENTER:
             switch (selected) {

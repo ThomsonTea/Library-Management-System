@@ -10,7 +10,10 @@
 #include <conio.h>
 #include "tc.h"
 #include "dbConnection.h"
+#include "tabulate/table.hpp"
+#include "table.h"
 
+using namespace tabulate;
 
 dbConnection::dbConnection()
 {
@@ -72,7 +75,6 @@ void dbConnection::fetchAndDisplayData(const std::string& query)
     }
     try
     {
-        int maxWidth = 15;
         sql::Statement* stmt = con->createStatement();
         sql::ResultSet* res = stmt->executeQuery(query);
 
@@ -80,99 +82,30 @@ void dbConnection::fetchAndDisplayData(const std::string& query)
         sql::ResultSetMetaData* meta = res->getMetaData();
         int columnCount = meta->getColumnCount();
 
-        // Calculate column widths dynamically based on header size
-        std::vector<int> columnWidths(columnCount, maxWidth); // Default width for each column
+        // Create a tabulate Table object
+        tabulate::Table table;
+
+        // Add column names to the table as header
+        tabulate::Table::Row_t header;
         for (int i = 1; i <= columnCount; ++i)
         {
-            int headerWidth = meta->getColumnName(i).length();
-            columnWidths[i - 1] = std::max(headerWidth, maxWidth); // Minimum width is `maxWidth`
+            header.push_back(meta->getColumnName(i));  // Convert column name to std::string
         }
+        table.add_row(header);  // Add header row to the table
 
-        // Utility function to wrap text into multiple lines
-        auto wrapText = [](const std::string& text, int width) {
-            std::vector<std::string> lines;
-            std::istringstream words(text);
-            std::string word, line;
-
-            while (words >> word)
-            {
-                if (line.length() + word.length() + 1 > static_cast<size_t>(width))
-                {
-                    lines.push_back(line);
-                    line.clear();
-                }
-                line += (line.empty() ? "" : " ") + word;
-            }
-            if (!line.empty())
-            {
-                lines.push_back(line);
-            }
-            return lines;
-            };
-
-        // Print the top border
-        std::cout << "+";
-        for (const auto& width : columnWidths)
-        {
-            std::cout << std::string(width, '-') << "+";
-        }
-        std::cout << std::endl;
-
-        // Print table header
-        std::cout << "|";
-        for (int i = 1; i <= columnCount; ++i)
-        {
-            std::cout << YELLOW << std::setw(columnWidths[i - 1]) << std::left << meta->getColumnName(i) << RESET << "|";
-        }
-        std::cout << std::endl;
-
-        // Print the header separator
-        std::cout << "+";
-        for (const auto& width : columnWidths)
-        {
-            std::cout << std::string(width, '-') << "+";
-        }
-        std::cout << std::endl;
-
-        // Print each row
+        // Add data rows to the table
         while (res->next())
         {
-            // Wrap text for each column
-            std::vector<std::vector<std::string>> wrappedColumns(columnCount);
-            int maxLines = 1;
+            tabulate::Table::Row_t row;
             for (int i = 1; i <= columnCount; ++i)
             {
-                wrappedColumns[i - 1] = wrapText(res->getString(i), columnWidths[i - 1]);
-                maxLines = std::max(maxLines, static_cast<int>(wrappedColumns[i - 1].size()));
+                row.push_back(res->getString(i));  // Convert each data cell to std::string
             }
-
-            // Print wrapped rows (handle multi-line cells)
-            for (int line = 0; line < maxLines; ++line)
-            {
-                std::cout << "|";
-                for (int i = 0; i < columnCount; ++i)
-                {
-                    if (line < static_cast<int>(wrappedColumns[i].size()))
-                    {
-                        std::cout << std::setw(columnWidths[i]) << std::left << wrappedColumns[i][line];
-                    }
-                    else
-                    {
-                        std::cout << std::setw(columnWidths[i]) << " "; // Empty padding for non-existent lines
-                    }
-                    std::cout << "|";
-                }
-                std::cout << std::endl;
-            }
-
-            // Print a separator after each row to visually separate data
-            std::cout << "+";
-            for (const auto& width : columnWidths)
-            {
-                std::cout << std::string(width, '-') << "+";
-            }
-            std::cout << std::endl;
+            table.add_row(row);  // Add the row to the table
         }
+
+        // Print the table using tabulate
+        tableFormat(table);
 
         delete res;
         delete stmt;
@@ -181,4 +114,31 @@ void dbConnection::fetchAndDisplayData(const std::string& query)
     {
         std::cerr << "Error fetching data: " << e.what() << std::endl;
     }
+}
+
+std::string dbConnection::extractUserIDFromQuery(const std::string& query)
+{
+    // This function assumes the query is in the form of:
+    // "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE userID='some_id'"
+    std::string userID;
+
+    // Find the position of "userID='"
+    size_t pos = query.find("userID='");
+
+    if (pos != std::string::npos)
+    {
+        // Move position to the start of the ID (after "userID='")
+        pos += 8;
+
+        // Find the closing quote
+        size_t endPos = query.find("'", pos);
+
+        if (endPos != std::string::npos)
+        {
+            // Extract the substring between the quotes (the userID)
+            userID = query.substr(pos, endPos - pos);
+        }
+    }
+
+    return userID;
 }

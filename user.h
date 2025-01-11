@@ -12,6 +12,14 @@ class User
 {
 public:
     User(dbConnection* connection);
+    User(const std::string& userID,
+        const std::string& name,
+        const std::string& ic,
+        const std::string& phoneNum,
+        const std::string& email,
+        const std::string& address,
+        const std::string& password,
+        const std::string& role);
     ~User();
 
     std::string getUserID();
