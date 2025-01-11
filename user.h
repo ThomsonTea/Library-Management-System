@@ -22,6 +22,7 @@ public:
     std::string getAddress();
     std::string getPassword();
     std::string getRole();
+    dbConnection* getDB();
 
     void setUserID(std::string userID);
     void setName(std::string name);
@@ -40,6 +41,7 @@ public:
     void retrieveUserFromDB(const std::string& userID);
     void changePassword();
     void userManagementMenu();
+    void deleteUser();
     std::string hiddenInput();
 
 private:

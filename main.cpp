@@ -9,7 +9,7 @@
 
 int main() {
     dbConnection* db = new dbConnection();
-    User user(db);
+    User loggingUser(db);
     Book book(db);
     std::string userID, password;
     bool loggedIn = false;
@@ -19,7 +19,7 @@ int main() {
     while (true) {
         // User login verification (you can define userVerify logic in the User class)
         while (!loggedIn) {
-            if (user.userVerify()) {
+            if (loggingUser.userVerify()) {
                 loggedIn = true;
             }
         }
@@ -27,8 +27,7 @@ int main() {
         // Main menu loop
         do {
             system("cls");
-            std::cout << CYAN << "Library Management System" << RESET << std::endl;
-
+            std::cout << CYAN << "Welcome to Library Management System, " << BOLD << loggingUser.getName() << "!" << RESET << std::endl;
             std::cout << "\nModule: " << std::endl;
             std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "My Profile" << RESET << std::endl;
             std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Borrowing" << RESET << std::endl;
@@ -52,7 +51,7 @@ int main() {
             case KEY_ENTER:
                 switch (selected) {
                 case 0:
-                    user.userProfile();
+                    loggingUser.userProfile();
                     break;
                 case 1:
                     // Borrowing module
@@ -67,7 +66,7 @@ int main() {
                     book.libraryPrompt();
                     break;
                 case 5:
-                    user.userManagementMenu();
+                    loggingUser.userManagementMenu();
                     break;
                 default:
                     std::cout << "\nInvalid Input, please try again..." << std::endl;
@@ -87,6 +86,7 @@ int main() {
                     std::this_thread::sleep_for(std::chrono::seconds(1));
 
                     loggedIn = false;
+                    selecting = false;
                 }
                 break;
             }

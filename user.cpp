@@ -53,6 +53,11 @@ std::string User::getRole()
     return this->role;
 }
 
+dbConnection* User::getDB()
+{
+    return this->db;
+}
+
 void User::setUserID(std::string userID)
 {
     this->userID = userID;
@@ -91,19 +96,20 @@ bool User::userVerify()
     while (true)
     {
         system("cls");
+        std::string id;
         std::cout << CYAN << "User Login" << RESET << std::endl;
         std::cout << "Enter id: ";
-        std::cin >> userID;
+        std::cin >> id;
         std::cout << "Enter password: ";
-        password = hiddenInput();
+        std::string password = hiddenInput();
 
-        if (isUser(userID, password))
+        if (isUser(id, password))
         {
             std::cout << GREEN << "\n\nLogin successful!" << RESET << std::endl;
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
             system("cls");
-            retrieveUserFromDB(userID);
-            std::cout << "Welcome, " <<  CYAN << name << RESET << "!" << std::endl;
+            retrieveUserFromDB(id);
+            std::cout << "Welcome, " <<  CYAN << getName() << RESET << "!" << std::endl;
             std::this_thread::sleep_for(std::chrono::seconds(2));
             return true;
         }
@@ -160,7 +166,9 @@ void User::registerUser()
     try
     {
         system("cls");
-        std::string username, password, email, role, userID, name, ic, phoneNum, address;
+        User newUser(getDB());
+
+        std::string username, password, email, role, ic, phoneNum, address;
 
         std::cout << "Register User" << std::endl;
 
@@ -168,30 +176,32 @@ void User::registerUser()
         std::cout << "Username: ";
         std::cin.ignore();
         std::getline(std::cin, username);
+        newUser.setName(username);
 
         // Prompt for password
         std::cout << "Password: ";
         std::getline(std::cin, password);
+        newUser.setPassword(password);
 
         // Prompt for email
         std::cout << "Email: ";
         std::getline(std::cin, email);
-
-        // Prompt for name
-        std::cout << "Name: ";
-        std::getline(std::cin, name);
+        newUser.setEmail(email);
 
         // Prompt for IC
         std::cout << "IC: ";
         std::getline(std::cin, ic);
+        newUser.setIc(ic);
 
         // Prompt for phone number
         std::cout << "Phone Number: ";
         std::getline(std::cin, phoneNum);
+        newUser.setPhoneNum(phoneNum);
 
         // Prompt for address
         std::cout << "Address: ";
         std::getline(std::cin, address);
+        newUser.setAddress(address);
 
         // Prompt for role selection with validation
         int roleChoice;
@@ -212,8 +222,14 @@ void User::registerUser()
                 role = "staff";
                 break;
             default:
-                std::cout << "Invalid choice. Please select 1, 2, or 3." << std::endl;
+                std::cout << RED << "Invalid choice. Please select 1, 2, or 3." << RESET << std::endl;
+                std::this_thread::sleep_for(std::chrono::seconds(3));
+                std::cout << "\x1b[8;1H";
+                std::cout << "\x1b[K";
+                std::cout << "\x1b[0J";
+                break;
             }
+            newUser.setRole(role);
         } while (roleChoice < 1 || roleChoice > 3);
 
         // Generate userID based on role
@@ -235,12 +251,14 @@ void User::registerUser()
             // Format the new userID with leading zeros
             std::ostringstream oss;
             oss << prefix << std::setw(8) << std::setfill('0') << newIDNumber;
-            userID = oss.str();
+            std::string id = oss.str();
+            newUser.setUserID(id);
         }
         else
         {
             // Start with the first userID if none exist
-            userID = std::string(1, prefix) + "00000001";
+            std::string id = std::string(1, prefix) + "00000001";
+            newUser.setUserID(id);
         }
 
         // Clean up
@@ -251,21 +269,21 @@ void User::registerUser()
         query = "INSERT INTO User (userID, name, ic, email, phoneNum, address, password, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         pstmt = db->getConnection()->prepareStatement(query);
 
-        pstmt->setString(1, userID);
-        pstmt->setString(2, name);
-        pstmt->setString(3, ic);
-        pstmt->setString(4, email);
-        pstmt->setString(5, phoneNum);
-        pstmt->setString(6, address);
-        pstmt->setString(7, password);
-        pstmt->setString(8, role);
+        pstmt->setString(1, newUser.getUserID());
+        pstmt->setString(2, newUser.getName());
+        pstmt->setString(3, newUser.getIc());
+        pstmt->setString(4, newUser.getEmail());
+        pstmt->setString(5, newUser.getPhoneNum());
+        pstmt->setString(6, newUser.getAddress());
+        pstmt->setString(7, newUser.getPassword());
+        pstmt->setString(8, newUser.getRole());
 
         pstmt->executeUpdate();
 
         delete pstmt;
 
-        std::cout << GREEN << "User registered successfully with userID: " << RESET << userID <<  std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::cout << GREEN << "User registered successfully with userID: " << RESET << newUser.getUserID() <<  std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(3));
     }
     catch (sql::SQLException& e)
     {
@@ -722,7 +740,7 @@ void User::userManagementMenu()
         case KEY_ENTER:
             switch (selected) {
             case 0:
-                //Register User
+                registerUser();
                 break;
             case 1:
                 //Edit User
@@ -742,4 +760,9 @@ void User::userManagementMenu()
 
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     } while (selecting);
+}
+
+void User::deleteUser()
+{
+
 }

@@ -6,7 +6,9 @@
 
 #include "book.h"
 
-Book::Book(dbConnection* connection) : db(connection) {}
+Book::Book(dbConnection* connection) : db(connection) 
+{
+}
 
 Book::~Book()
 {}
