@@ -42,6 +42,7 @@ public:
     void changePassword();
     void userManagementMenu();
     void deleteUser();
+    void searchUser();
     std::string hiddenInput();
 
 private:

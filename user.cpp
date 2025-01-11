@@ -721,12 +721,14 @@ void User::userManagementMenu()
         std::cout << CYAN << "Library Management System" << RESET << std::endl;
 
         std::cout << "\nModule: " << std::endl;
-        std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "Register User" << RESET << std::endl;
-        std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Edit User" << RESET << std::endl;
-        std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "Delete User" << RESET << std::endl;
+        std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "Search User" << RESET << std::endl;
+        std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Register User" << RESET << std::endl;
+        std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "Edit User" << RESET << std::endl;
+        std::cout << (selected == 3 ? "-> " : "   ") << (selected == 3 ? BG_YELLOW : "") << "Delete User" << RESET << std::endl;
 
         std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, or press Esc to quit.\n";
 
+        db->fetchAndDisplayData("SELECT userID, name, ic, phoneNum, email, address, role FROM User ");
         // Capture user input for navigation
         char c = _getch(); // Use _getch() to get key press without waiting for enter.
         std::string exitpass;
@@ -738,14 +740,18 @@ void User::userManagementMenu()
             selected = (selected + 1) % 3; // Wrap around to the first option if at the bottom.
             break;
         case KEY_ENTER:
-            switch (selected) {
+            switch (selected) 
+            {
             case 0:
-                registerUser();
+                searchUser();
                 break;
             case 1:
-                //Edit User
+                registerUser();
                 break;
             case 2:
+                //Edit User
+                break;
+            case 3:
                 //Delete User
                 break;
             default:
@@ -765,4 +771,92 @@ void User::userManagementMenu()
 void User::deleteUser()
 {
 
+}
+
+void User::searchUser()
+{
+    int selected = 0;  // Keeps track of which option is selected.
+    bool selecting = true;
+    std::string query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User";
+    do
+    {
+        system("cls");
+        std::string data;
+
+        std::cout << CYAN << "Welcome to Library !\n" << RESET << std::endl;
+        std::cout << "Search:" << std::endl;
+        std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "ID: " << RESET << std::endl;
+        std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Name: " << RESET << std::endl;
+        std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "IC: " << RESET << std::endl;
+        std::cout << (selected == 3 ? "-> " : "   ") << (selected == 3 ? BG_YELLOW : "") << "Phone Number: " << RESET << std::endl;
+        std::cout << (selected == 4 ? "-> " : "   ") << (selected == 4 ? BG_YELLOW : "") << "Email: " << RESET << std::endl;
+        std::cout << (selected == 5 ? "-> " : "   ") << (selected == 5 ? BG_YELLOW : "") << "Address: " << RESET << std::endl;
+        std::cout << (selected == 6 ? "-> " : "   ") << (selected == 6 ? BG_YELLOW : "") << "Role: " << RESET << std::endl;
+
+        std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, press R to reset searching, or press Esc to quit.\n";
+
+        db->fetchAndDisplayData(query);
+
+
+        char c = _getch(); // Use _getch() to get key press without waiting for enter.
+        switch (c) {
+        case KEY_UP:
+            selected = (selected - 1 + 7) % 7; // Wrap around to the last option if at the top.
+            break;
+        case KEY_DOWN:
+            selected = (selected + 1) % 7; // Wrap around to the first option if at the bottom.
+            break;
+        case KEY_UPPER_R:
+        case KEY_LOWER_R:
+            query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User"; // Reset the searching
+            break;
+        case KEY_ENTER:
+            switch (selected) {
+            case 0:
+                std::cout << "\x1b[4;8H";
+                std::cin >> data;
+                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE userID LIKE '" + data + "'";
+                break;
+            case 1:
+                std::cout << "\x1b[5;10H";
+                std::cin >> data;
+                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE name LIKE '" + data + "'";
+                break;
+            case 2:
+                std::cout << "\x1b[6;8H";
+                std::cin >> data;
+                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE ic LIKE '" + data + "'";
+                break;
+            case 3:
+                std::cout << "\x1b[7;18H";
+                std::cin >> data;
+                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE phoneNum LIKE '" + data + "'";
+                break;
+            case 4:
+                std::cout << "\x1b[8;11H";
+                std::cin >> data;
+                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE email LIKE '" + data + "'";
+                break;
+            case 5:
+                std::cout << "\x1b[9;13H";
+                std::cin >> data;
+                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE address LIKE '" + data + "'";
+                break;
+            case 6:
+                std::cout << "\x1b[10;10H";
+                std::cin >> data;
+                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE role LIKE '" + data + "'";
+                break;
+            default:
+                std::cout << "\nInvalid Input, please try again..." << std::endl;
+                break;
+            }
+            break;
+        case KEY_ESC:
+            selecting = false;
+            break;
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    } while (selecting);
 }

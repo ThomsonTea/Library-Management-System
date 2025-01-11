@@ -199,32 +199,32 @@ void Book::libraryPrompt()
             case 0:
                 std::cout << "\x1b[4;8H";
                 std::cin >> data;
-                query = "SELECT bookID,isbn, title, category, author, publisher FROM Book WHERE bookID='" + data + "'";
+                query = "SELECT bookID,isbn, title, category, author, publisher FROM Book WHERE bookID LIKE '" + data + "'";
                 break;
             case 1:
                 std::cout << "\x1b[5;11H";
                 std::cin >> data;
-                query = "SELECT bookID,isbn, title, category, author, publisher FROM Book WHERE title='" + data + "'";
+                query = "SELECT bookID,isbn, title, category, author, publisher FROM Book WHERE LIKE '" + data + "'";
                 break;
             case 2:
                 std::cout << "\x1b[6;10H";
                 std::cin >> data;
-                query = "SELECT bookID,isbn, title, category, author, publisher FROM Book WHERE isbn='" + data + "'";
+                query = "SELECT bookID,isbn, title, category, author, publisher FROM Book WHERE LIKE '" + data + "'";
                 break;
             case 3:
                 std::cout << "\x1b[7;11H";
                 std::cin >> data;
-                query = "SELECT bookID,isbn, title, category, author, publisher FROM Book WHERE author='" + data + "'";
+                query = "SELECT bookID,isbn, title, category, author, publisher FROM Book WHERE LIKE '" + data + "'";
                 break;
             case 4:
                 std::cout << "\x1b[8;14H";
                 std::cin >> data;
-                query = "SELECT bookID,isbn, title, category, author, publisher FROM Book WHERE publisher='" + data + "'";
+                query = "SELECT bookID,isbn, title, category, author, publisher FROM Book WHERE LIKE '" + data + "'";
                 break;
             case 5:
                 std::cout << "\x1b[9;13H";
                 std::cin >> data;
-                query = "SELECT bookID,isbn, title, category, author, publisher FROM Book WHERE category='" + data + "'";
+                query = "SELECT bookID,isbn, title, category, author, publisher FROM Book WHERE LIKE '" + data + "'";
                 break;
             default:
                 std::cout << "\nInvalid Input, please try again..." << std::endl;
