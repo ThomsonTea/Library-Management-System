@@ -298,6 +298,7 @@ void User::editProfile()
         do
         {
             system("cls");
+            // User user = retrieveUserFromDB(getUserID());
             retrieveUserFromDB(getUserID());
             int option;
             const int labelWidth = 20;   // Width for labels
