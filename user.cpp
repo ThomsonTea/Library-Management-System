@@ -174,6 +174,7 @@ bool User::isUser(const std::string& userId, const std::string& password)
         return false;
     }
 }
+
 void User::registerUser()
 {
     try
@@ -181,20 +182,69 @@ void User::registerUser()
         system("cls");
         User newUser(getDB());
 
-        std::string username, password, email, role, ic, phoneNum, address;
+        std::string username, password, confirmPassword, email, role, ic, phoneNum, address;
 
-        std::cout << "Register User" << std::endl;
+        std::cout << CYAN << "Register User" << RESET << std::endl;
 
         // Prompt for username
-        std::cout << "Username: ";
-        std::cin.ignore();
-        std::getline(std::cin, username);
-        newUser.setName(username);
+        bool usernameExists = false;
+        do
+        {
+            std::cout << "Username: ";
+            std::cin.ignore();
+            std::getline(std::cin, username);
 
-        // Prompt for password
-        std::cout << "Password: ";
-        std::getline(std::cin, password);
-        newUser.setPassword(password);
+            // Check if username exists in the database
+            std::string query = "SELECT COUNT(*) FROM User WHERE name = ?";
+            sql::PreparedStatement* pstmt = db->getConnection()->prepareStatement(query);
+            pstmt->setString(1, username);
+            sql::ResultSet* res = pstmt->executeQuery();
+
+            res->next();
+            if (res->getInt(1) > 0) // If a record is found, username exists
+            {
+                std::cout << RED << "Username already exists. Please choose a different one." << RESET << std::endl;
+                std::this_thread::sleep_for(std::chrono::seconds(2));
+                std::cout << "\x1b[2;1H";
+                std::cout << "\x1b[K";
+                std::cout << "\x1b[0J";
+                usernameExists = true;
+            }
+            else
+            {
+                newUser.setName(username);
+                usernameExists = false;
+            }
+
+            delete pstmt;
+            delete res;
+
+        } while (usernameExists);
+
+        // Prompt for password and confirmation
+        bool passwordMatch = false;
+        do
+        {
+            std::cout << "Password: ";
+            password = hiddenInput();
+            std::cout << "Confirm Password: ";
+            confirmPassword = hiddenInput();
+
+            if (password == confirmPassword)
+            {
+                newUser.setPassword(password);
+                passwordMatch = true;
+            }
+            else
+            {
+                std::cout << RED << "Passwords do not match. Please try again." << RESET << std::endl;
+                std::this_thread::sleep_for(std::chrono::seconds(2));
+                std::cout << "\x1b[3;1H";
+                std::cout << "\x1b[K";
+                std::cout << "\x1b[0J";
+            }
+
+        } while (!passwordMatch);
 
         // Prompt for email
         std::cout << "Email: ";
@@ -202,9 +252,38 @@ void User::registerUser()
         newUser.setEmail(email);
 
         // Prompt for IC
-        std::cout << "IC: ";
-        std::getline(std::cin, ic);
-        newUser.setIc(ic);
+        bool icExists = false;
+        do
+        {
+            std::cout << "IC: ";
+            std::getline(std::cin, ic);
+
+            // Check if IC exists in the database
+            std::string query = "SELECT COUNT(*) FROM User WHERE ic = ?";
+            sql::PreparedStatement* pstmt = db->getConnection()->prepareStatement(query);
+            pstmt->setString(1, ic);
+            sql::ResultSet* res = pstmt->executeQuery();
+
+            res->next();
+            if (res->getInt(1) > 0) // If a record is found, IC exists
+            {
+                std::cout << RED << "IC already exists. Please choose a different one." << RESET << std::endl;
+                std::this_thread::sleep_for(std::chrono::seconds(2));
+                std::cout << "\x1b[5;1H";
+                std::cout << "\x1b[K";
+                std::cout << "\x1b[0J";
+                icExists = true;
+            }
+            else
+            {
+                newUser.setIc(ic);
+                icExists = false;
+            }
+
+            delete pstmt;
+            delete res;
+
+        } while (icExists);
 
         // Prompt for phone number
         std::cout << "Phone Number: ";
@@ -295,7 +374,7 @@ void User::registerUser()
 
         delete pstmt;
 
-        std::cout << GREEN << "User registered successfully with userID: " << RESET << newUser.getUserID() <<  std::endl;
+        std::cout << GREEN << "User registered successfully with userID: " << RESET << newUser.getUserID() << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(3));
     }
     catch (sql::SQLException& e)
@@ -308,8 +387,8 @@ void User::registerUser()
         std::cerr << "Unexpected error: " << e.what() << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(2));
     }
-
 }
+
 
 void User::editProfile()
 {
@@ -949,38 +1028,38 @@ void User::searchUser()
             switch (selected) {
             case 0:
                 std::cout << "\x1b[4;8H";
-                std::cin >> data;
-                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE userID LIKE '" + data + "'";
+                getline(std::cin, data);
+                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE userID LIKE '%" + data + "%'";
                 break;
             case 1:
                 std::cout << "\x1b[5;10H";
-                std::cin >> data;
-                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE name LIKE '" + data + "'";
+                getline(std::cin, data);
+                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE name LIKE '%" + data + "%'";
                 break;
             case 2:
                 std::cout << "\x1b[6;8H";
-                std::cin >> data;
-                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE ic LIKE '" + data + "'";
+                getline(std::cin, data);
+                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE ic LIKE '%" + data + "%'";
                 break;
             case 3:
                 std::cout << "\x1b[7;18H";
-                std::cin >> data;
-                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE phoneNum LIKE '" + data + "'";
+                getline(std::cin, data);
+                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE phoneNum LIKE '%" + data + "%'";
                 break;
             case 4:
                 std::cout << "\x1b[8;11H";
-                std::cin >> data;
-                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE email LIKE '" + data + "'";
+                getline(std::cin, data);
+                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE email LIKE '%" + data + "%'";
                 break;
             case 5:
                 std::cout << "\x1b[9;13H";
-                std::cin >> data;
-                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE address LIKE '" + data + "'";
+                getline(std::cin, data);
+                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE address LIKE '%" + data + "%'";
                 break;
             case 6:
                 std::cout << "\x1b[10;10H";
-                std::cin >> data;
-                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE role LIKE '" + data + "'";
+                getline(std::cin, data);
+                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE role LIKE '%" + data + "%'";
                 break;
             default:
                 std::cout << "\nInvalid Input, please try again..." << std::endl;
