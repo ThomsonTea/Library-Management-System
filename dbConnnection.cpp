@@ -89,9 +89,10 @@ void dbConnection::fetchAndDisplayData(const std::string& query)
         tabulate::Table::Row_t header;
         for (int i = 1; i <= columnCount; ++i)
         {
-            header.push_back(meta->getColumnName(i));  // Convert column name to std::string
+            // Use getColumnLabel() instead of getColumnName() to get aliases
+            header.push_back(meta->getColumnLabel(i));
         }
-        table.add_row(header);  // Add header row to the table
+        table.add_row(header);
 
         // Add data rows to the table
         while (res->next())
@@ -99,9 +100,9 @@ void dbConnection::fetchAndDisplayData(const std::string& query)
             tabulate::Table::Row_t row;
             for (int i = 1; i <= columnCount; ++i)
             {
-                row.push_back(res->getString(i));  // Convert each data cell to std::string
+                row.push_back(res->getString(i));
             }
-            table.add_row(row);  // Add the row to the table
+            table.add_row(row);
         }
 
         // Print the table using tabulate
@@ -114,33 +115,6 @@ void dbConnection::fetchAndDisplayData(const std::string& query)
     {
         std::cerr << "Error fetching data: " << e.what() << std::endl;
     }
-}
-
-std::string dbConnection::extractUserIDFromQuery(const std::string& query)
-{
-    // This function assumes the query is in the form of:
-    // "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE userID='some_id'"
-    std::string userID;
-
-    // Find the position of "userID='"
-    size_t pos = query.find("userID='");
-
-    if (pos != std::string::npos)
-    {
-        // Move position to the start of the ID (after "userID='")
-        pos += 8;
-
-        // Find the closing quote
-        size_t endPos = query.find("'", pos);
-
-        if (endPos != std::string::npos)
-        {
-            // Extract the substring between the quotes (the userID)
-            userID = query.substr(pos, endPos - pos);
-        }
-    }
-
-    return userID;
 }
 
 bool dbConnection::recordExists(const std::string& query) {
