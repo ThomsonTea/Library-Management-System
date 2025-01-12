@@ -41,6 +41,7 @@ public:
 	void retrieveBookFromDB(std::string bookId);
 	void addBook();
 	void editBook();
+	void removeBook();
 	void libraryManagementMenu();
 	std::string generateBookID(sql::Connection* conn);
 

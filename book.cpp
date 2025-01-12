@@ -360,7 +360,7 @@ void Book::libraryManagementMenu()
                 editBook();
                 break;
             case 3:
-                //removeBook();
+                removeBook();
                 break;
             default:
                 std::cout << "\nInvalid Input, please try again..." << std::endl;
@@ -813,3 +813,181 @@ void Book::editBook()
         }
     } while (selecting);
 }
+
+void Book::removeBook()
+{
+    int selected = 0;  // Keeps track of which option is selected.
+    bool selecting = true;
+    bool bookSelected = false;  // Flag to track if a book is selected for deletion
+    bool deleteConfirmed = false;  // Flag to track if deletion is confirmed
+    std::string searchData;
+    std::string query = "SELECT bookID AS 'Book ID', "
+        "title AS 'Title', "
+        "author AS 'Author', "
+        "isbn AS 'ISBN', "
+        "price AS 'Price', "
+        "quantity AS 'Quantity', "
+        "status AS 'Status' "
+        "FROM Book LIMIT 10";
+
+    std::string deletePassKey = "CONFIRM"; // Passkey for deletion confirmation
+    std::string selectedSearchCriteria = ""; // To store the search criterion (bookID, title, or ISBN)
+    std::string enteredPasskey;
+
+    do
+    {
+        system("cls");  // Clear screen to start fresh
+        std::cout << CYAN << "Welcome to the Library System!\n" << RESET << std::endl;
+        std::cout << "Search by:\n";
+        std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "Book ID: " << RESET << std::endl;
+        std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Title: " << RESET << std::endl;
+        std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "ISBN: " << RESET << std::endl;
+
+        std::cout << "\n\n\n\nUse arrow keys to navigate, press Enter to select, press R to reset searching, or press Esc to quit.\n";
+
+        db->fetchAndDisplayData(query);  // Fetch and display data
+
+        if (bookSelected && !deleteConfirmed)
+        {
+            char c = _getch();
+            switch (c)
+            {
+            case KEY_ENTER:
+                std::cout << GREEN << "Please enter the \"CONFIRM\" to confirm deletion: " << RESET;
+                std::cin >> enteredPasskey;
+                if (enteredPasskey == deletePassKey) {
+                    // Construct the delete query here, after confirmation
+                    std::string deleteQuery = "DELETE FROM Book WHERE " + selectedSearchCriteria + "='" + searchData + "'";
+                    db->executeQuery(deleteQuery);
+                    std::cout << GREEN << "Book deleted successfully!" << RESET << std::endl;
+                }
+                else {
+                    std::cout << RED << "Failed to delete book!" << RESET << std::endl;
+                }
+                bookSelected = false;  // Reset book selection
+                deleteConfirmed = false; // Reset passkey confirmation
+                query = "SELECT bookID AS 'Book ID', "
+                    "title AS 'Title', "
+                    "author AS 'Author', "
+                    "isbn AS 'ISBN', "
+                    "price AS 'Price', "
+                    "quantity AS 'Quantity', "
+                    "status AS 'Status' "
+                    "FROM Book LIMIT 10";
+                break;
+            case KEY_ESC:  // Cancel deletion with Esc
+                std::cout << RED << "Deletion cancelled." << RESET << std::endl;
+                bookSelected = false;  // Reset book selection
+                deleteConfirmed = false; // Reset deletion confirmation
+                query = "SELECT bookID AS 'Book ID', "
+                    "title AS 'Title', "
+                    "author AS 'Author', "
+                    "isbn AS 'ISBN', "
+                    "price AS 'Price', "
+                    "quantity AS 'Quantity', "
+                    "status AS 'Status' "
+                    "FROM Book LIMIT 10";
+
+                std::cout << YELLOW << "Press \"R\" to Refresh the list." << std::endl;
+                break;
+            }
+        }
+        char c = _getch(); // Use _getch() to get key press without waiting for enter.
+        switch (c)
+        {
+        case KEY_UP:
+            selected = (selected - 1 + 3) % 3; // Wrap around to the last option if at the top.
+            break;
+        case KEY_DOWN:
+            selected = (selected + 1) % 3; // Wrap around to the first option if at the bottom.
+            break;
+        case KEY_UPPER_R:
+        case KEY_LOWER_R:
+            query = "SELECT bookID AS 'Book ID', "
+                "title AS 'Title', "
+                "author AS 'Author', "
+                "isbn AS 'ISBN', "
+                "price AS 'Price', "
+                "quantity AS 'Quantity', "
+                "status AS 'Status' "
+                "FROM Book LIMIT 10";
+
+            break;
+        case KEY_ENTER:
+            switch (selected) {
+            case 0:
+                std::cout << "\x1b[4;13H";
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // avoid '' data save inside and couse error
+                getline(std::cin, searchData);
+                query = "SELECT bookID AS 'Book ID', "
+                    "title AS 'Title', "
+                    "author AS 'Author', "
+                    "isbn AS 'ISBN', "
+                    "price AS 'Price', "
+                    "quantity AS 'Quantity', "
+                    "status AS 'Status' "
+                    "FROM Book WHERE bookID = '" + searchData + "'";
+
+                if (!db->recordExists(query)) {
+                    std::cout << "\x1b[4;13H" << RED << "Error: Book with ID '" << searchData << "' does not exist." << RESET << std::endl;
+                    std::cin.ignore();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                    break;
+                }
+                selectedSearchCriteria = "bookID";  // Set search criteria to bookID
+                bookSelected = true;
+                break;
+            case 1:
+                std::cout << "\x1b[5;11H";
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // avoid '' data save inside and couse error
+                getline(std::cin, searchData);
+                query = "SELECT bookID AS 'Book ID', "
+                    "title AS 'Title', "
+                    "author AS 'Author', "
+                    "isbn AS 'ISBN', "
+                    "price AS 'Price', "
+                    "quantity AS 'Quantity', "
+                    "status AS 'Status' "
+                    "FROM Book WHERE title = '" + searchData + "'";
+                if (!db->recordExists(query)) {
+                    std::cout << "\x1b[5;11H" << RED << "Error: Book with title '" << searchData << "' does not exist." << RESET << std::endl;
+                    std::cin.ignore();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                    break;
+                }
+                selectedSearchCriteria = "title";  // Set search criteria to title
+                bookSelected = true;
+                break;
+            case 2:
+                std::cout << "\x1b[6;10H";
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // avoid '' data save inside and couse error
+                getline(std::cin, searchData);
+                query = "SELECT bookID AS 'Book ID', "
+                    "title AS 'Title', "
+                    "author AS 'Author', "
+                    "isbn AS 'ISBN', "
+                    "price AS 'Price', "
+                    "quantity AS 'Quantity', "
+                    "status AS 'Status' "
+                    "FROM Book WHERE isbn = '" + searchData + "'";
+                if (!db->recordExists(query)) {
+                    std::cout << "\x1b[6;10H" << RED << "Error: Book with ISBN '" << searchData << "' does not exist." << RESET << std::endl;
+                    std::cin.ignore();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                    break;
+                }
+                selectedSearchCriteria = "isbn";  // Set search criteria to ISBN
+                bookSelected = true;
+                break;
+            default:
+                std::cout << "\nInvalid Input, please try again..." << std::endl;
+                break;
+            }
+            break;
+        case KEY_ESC:
+            selecting = false;
+            break;
+        }
+    }while (selecting);  // End of loop
+}
+

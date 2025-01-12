@@ -649,17 +649,23 @@ void User::deleteUser()
     bool selecting = true;
     bool userSelected = false;  // Flag to track if a user is selected for deletion
     bool deleteConfirmed = false;  // Flag to track if deletion is confirmed
-    std::string query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User LIMIT 10";
+    std::string query = "SELECT userID AS 'User ID', "
+        "name AS 'Name', "
+        "ic AS 'IC', "
+        "phoneNum AS 'Phone Number', "
+        "email AS 'Email', "
+        "address AS 'Address', "
+        "role AS 'Role' "
+        "FROM User LIMIT 5";
+
     std::string deletePassKey = "CONFIRM"; // Store name of the selected user (for passkey confirmation)
+    std::string enteredPasskey;
     std::string selectedSearchCriteria = ""; // To store the search criterion (name or IC or userID)
-
-    std::string data; // To store user input for search
-
+    std::string searchData;
     do
     {
         system("cls");  // Clear screen to start fresh
-
-        std::cout << CYAN << "Welcome to Library !\n" << RESET << std::endl;
+        std::cout << CYAN << "Welcome to the Library System!\n" << RESET << std::endl;
         std::cout << "Search by:\n";
         std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "ID: " << RESET << std::endl;
         std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Name: " << RESET << std::endl;
@@ -669,44 +675,51 @@ void User::deleteUser()
 
         if (userSelected && !deleteConfirmed)
         {
-            // Ask user to confirm deletion by pressing Enter, or Esc to cancel
             std::cout << GREEN << "Press Enter to confirm deletion, or Esc to cancel." << RESET << std::endl;
-        }
-
-        db->fetchAndDisplayData(query);  // Fetch and display data
-
-        if (userSelected && !deleteConfirmed)  // If a user is selected but not confirmed for deletion
-        {
-            char c = _getch(); // Use _getch() to get key press without waiting for enter.
-            std::string deleteQuery = "DELETE FROM User WHERE " + selectedSearchCriteria + "='" + data + "'";
-            std::string enteredPasskey;
+            char c = _getch();
             switch (c)
             {
-            case KEY_ENTER:  // Confirm deletion with Enter
-                std::cout << GREEN << "Please enter the \"CONFIRM\" to confirm deletion : " << RESET;
+            case KEY_ENTER:
+                std::cout << GREEN << "Please enter the \"CONFIRM\" to confirm deletion: " << RESET;
                 std::cin >> enteredPasskey;
                 if (enteredPasskey == deletePassKey) {
-                    // Perform the delete operation here based on the selected search criteria
+                    // Construct the delete query here, after confirmation
+                    std::string deleteQuery = "DELETE FROM User WHERE " + selectedSearchCriteria + "='" + searchData + "'";
                     db->executeQuery(deleteQuery);
                     std::cout << GREEN << "User deleted successfully!" << RESET << std::endl;
                 }
                 else {
-                    std::cout << RED << "Incorrect passkey!" << RESET << std::endl;
+                    std::cout << RED << "Failed to delete user!" << RESET << std::endl;
                 }
                 userSelected = false;  // Reset user selection
                 deleteConfirmed = false; // Reset passkey confirmation
-                std::cout << YELLOW << "Press \"R\" to Refresh the list." << std::endl;
+                query = "SELECT userID AS 'User ID', "
+                    "name AS 'Name', "
+                    "ic AS 'IC', "
+                    "phoneNum AS 'Phone Number', "
+                    "email AS 'Email', "
+                    "address AS 'Address', "
+                    "role AS 'Role' "
+                    "FROM User LIMIT 5";
                 break;
-
             case KEY_ESC:  // Cancel deletion with Esc
                 std::cout << RED << "Deletion cancelled." << RESET << std::endl;
                 userSelected = false;  // Reset user selection
                 deleteConfirmed = false; // Reset deletion confirmation
-                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User LIMIT 10"; // Reset the searching
+                query = "SELECT userID AS 'User ID', "
+                    "name AS 'Name', "
+                    "ic AS 'IC', "
+                    "phoneNum AS 'Phone Number', "
+                    "email AS 'Email', "
+                    "address AS 'Address', "
+                    "role AS 'Role' "
+                    "FROM User LIMIT 5";
                 std::cout << YELLOW << "Press \"R\" to Refresh the list." << std::endl;
                 break;
             }
         }
+
+        db->fetchAndDisplayData(query);  // Fetch and display data
 
         char c = _getch(); // Use _getch() to get key press without waiting for enter.
         switch (c)
@@ -719,16 +732,31 @@ void User::deleteUser()
             break;
         case KEY_UPPER_R:
         case KEY_LOWER_R:
-            query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User LIMIT 10"; // Reset the searching
+           query = "SELECT userID AS 'User ID', "
+                "name AS 'Name', "
+                "ic AS 'IC', "
+                "phoneNum AS 'Phone Number', "
+                "email AS 'Email', "
+                "address AS 'Address', "
+                "role AS 'Role' "
+                "FROM User LIMIT 5";
             break;
         case KEY_ENTER:
             switch (selected) {
             case 0:
                 std::cout << "\x1b[4;8H";
-                getline(std::cin, data);
-                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE userID='" + data + "'";
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // avoid '' data save inside and couse error
+                getline(std::cin, searchData);
+                query = "SELECT userID AS 'User ID', "
+                    "name AS 'Name', "
+                    "ic AS 'IC', "
+                    "phoneNum AS 'Phone Number', "
+                    "email AS 'Email', "
+                    "address AS 'Address', "
+                    "role AS 'Role' "
+                    "FROM User WHERE userID = '" + searchData + "'";
                 if (!db->recordExists(query)) {
-                    std::cout << "\x1b[4;8H" << RED << "Error: User with ID '" << data << "' does not exist." << RESET << std::endl;
+                    std::cout << "\x1b[4;8H" << RED << "Error: User with ID '" << searchData << "' does not exist." << RESET << std::endl;
                     std::cin.ignore();
                     std::this_thread::sleep_for(std::chrono::milliseconds(2));
                     break;
@@ -738,10 +766,19 @@ void User::deleteUser()
                 break;
             case 1:
                 std::cout << "\x1b[5;10H";
-                getline(std::cin, data);
-                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE name='" + data + "'";
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // avoid '' data save inside and couse error
+                getline(std::cin, searchData);
+                query = "SELECT userID AS 'User ID', "
+                    "name AS 'Name', "
+                    "ic AS 'IC', "
+                    "phoneNum AS 'Phone Number', "
+                    "email AS 'Email', "
+                    "address AS 'Address', "
+                    "role AS 'Role' "
+                    "FROM User WHERE name = '" + searchData + "'";
                 if (!db->recordExists(query)) {
-                    std::cout << "\x1b[5;10H" << RED << "Error: User with name '" << data << "' does not exist." << RESET << std::endl;
+                    std::cout << "\x1b[5;10H" << RED << "Error: User with name '" << searchData << "' does not exist." << RESET << std::endl;
+                    std::cin.ignore();
                     std::this_thread::sleep_for(std::chrono::milliseconds(2));
                     break;
                 }
@@ -750,10 +787,18 @@ void User::deleteUser()
                 break;
             case 2:
                 std::cout << "\x1b[6;8H";
-                getline(std::cin, data);
-                query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE ic='" + data + "'";
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // avoid '' data save inside and couse error
+                getline(std::cin, searchData);
+                query = "SELECT userID AS 'User ID', "
+                    "name AS 'Name', "
+                    "ic AS 'IC', "
+                    "phoneNum AS 'Phone Number', "
+                    "email AS 'Email', "
+                    "address AS 'Address', "
+                    "role AS 'Role' "
+                    "FROM User WHERE ic = '" + searchData + "'";
                 if (!db->recordExists(query)) {
-                    std::cout << "\x1b[6;8H" << RED << "Error: User with IC '" << data << "' does not exist." << RESET << std::endl;
+                    std::cout << "\x1b[6;8H" << RED << "Error: User with IC '" << searchData << "' does not exist." << RESET << std::endl;
                     std::this_thread::sleep_for(std::chrono::seconds(2));
                     break;
                 }
