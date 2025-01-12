@@ -871,10 +871,10 @@ void User::editUser()
     std::string query;  // Query for database search.
     sql::PreparedStatement* pstmt = nullptr;  // Declare outside the switch.
     User user(getDB());  // Object to hold user data during editing.
-
+    char prefix = 'U';
     do
     {
-        char prefix;
+
         system("cls");  // Clear the screen.
 
         std::cout << CYAN << "Edit User\n" << RESET << std::endl;

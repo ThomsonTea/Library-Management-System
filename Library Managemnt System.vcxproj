@@ -138,6 +138,7 @@
     <ClCompile Include="dbConnnection.cpp" />
     <ClCompile Include="table.cpp" />
     <ClCompile Include="user.cpp" />
+    <ClCompile Include="validation.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="book.h" />
@@ -145,6 +146,7 @@
     <ClInclude Include="table.h" />
     <ClInclude Include="tc.h" />
     <ClInclude Include="user.h" />
+    <ClInclude Include="validation.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SQLScript.sql" />

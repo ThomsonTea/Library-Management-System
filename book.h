@@ -9,6 +9,9 @@ class Book
 {
 public:
 	Book(dbConnection* connection);
+	Book(std::string bookID, std::string title, std::string isbn,
+		std::string author, std::string publisher, std::string category, int publicationYear,
+		int quantity, std::string status, double price);
 	~Book();
 
 	std::string getBookID();
@@ -33,10 +36,12 @@ public:
 	void setStatus(std::string status);
 	void setPrice(double price);
 
-	void libraryPrompt();
+	void searchBook();
 	void retrieveBookFromDB(std::string bookId);
 	void addBook();
-	std::string generateBookID();
+	void libraryManagementMenu();
+	std::string generateBookID(sql::Connection* conn);
+
 private:
 	std::string bookID;
 	std::string title;

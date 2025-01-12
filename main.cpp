@@ -63,7 +63,7 @@ int main() {
                     // Report
                     break;
                 case 4:
-                    book.libraryPrompt();
+                    book.libraryManagementMenu();
                     break;
                 case 5:
                     loggingUser.userManagementMenu();
