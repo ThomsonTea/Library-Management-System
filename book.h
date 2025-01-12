@@ -16,7 +16,7 @@ public:
 
 	std::string getBookID();
 	std::string getTitle();
-	std::string getISBN();
+	std::string getIsbn();
 	std::string getAuthor();
 	std::string getPublisher();
 	std::string getCategory();
@@ -24,10 +24,11 @@ public:
 	int getQuantity();
 	std::string getStatus();
 	double getPrice();
+	dbConnection* getDB();
 
 	void setBookID(std::string bookID);
 	void setTitle(std::string title);
-	void setISBN(std::string isbn);
+	void setIsbn(std::string isbn);
 	void setAuthor(std::string author);
 	void setPublisher(std::string publisher);
 	void setCategory(std::string category);
@@ -39,6 +40,7 @@ public:
 	void searchBook();
 	void retrieveBookFromDB(std::string bookId);
 	void addBook();
+	void editBook();
 	void libraryManagementMenu();
 	std::string generateBookID(sql::Connection* conn);
 

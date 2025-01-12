@@ -864,13 +864,14 @@ void User::searchUser()
 
 void User::editUser()
 {
+    dbConnection* db = new dbConnection();
     int selected = 0;  // Keeps track of which menu option is selected.
     bool selecting = true;  // Controls the main loop for searching and selecting a user.
     std::string data;  // User input for search.
     std::string searchColumn = "";  // Column to search by (userID, name, or IC).
     std::string query;  // Query for database search.
     sql::PreparedStatement* pstmt = nullptr;  // Declare outside the switch.
-    User user(getDB());  // Object to hold user data during editing.
+    User user(db);  // Object to hold user data during editing.
     char prefix = 'U';
     do
     {
