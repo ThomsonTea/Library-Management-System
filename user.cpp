@@ -703,6 +703,7 @@ void User::deleteUser()
                 userSelected = false;  // Reset user selection
                 deleteConfirmed = false; // Reset deletion confirmation
                 query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User LIMIT 10"; // Reset the searching
+                std::cout << YELLOW << "Press \"R\" to Refresh the list." << std::endl;
                 break;
             }
         }
@@ -724,11 +725,12 @@ void User::deleteUser()
             switch (selected) {
             case 0:
                 std::cout << "\x1b[4;8H";
-                std::cin >> data;
+                getline(std::cin, data);
                 query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE userID='" + data + "'";
                 if (!db->recordExists(query)) {
                     std::cout << "\x1b[4;8H" << RED << "Error: User with ID '" << data << "' does not exist." << RESET << std::endl;
                     std::cin.ignore();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(2));
                     break;
                 }
                 selectedSearchCriteria = "userID";  // Set search criteria to userID
@@ -736,11 +738,11 @@ void User::deleteUser()
                 break;
             case 1:
                 std::cout << "\x1b[5;10H";
-                std::cin >> data;
+                getline(std::cin, data);
                 query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE name='" + data + "'";
                 if (!db->recordExists(query)) {
                     std::cout << "\x1b[5;10H" << RED << "Error: User with name '" << data << "' does not exist." << RESET << std::endl;
-                    std::cin.ignore();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(2));
                     break;
                 }
                 selectedSearchCriteria = "name";  // Set search criteria to name
@@ -748,11 +750,11 @@ void User::deleteUser()
                 break;
             case 2:
                 std::cout << "\x1b[6;8H";
-                std::cin >> data;
+                getline(std::cin, data);
                 query = "SELECT userID, name, ic, phoneNum, email, address, role FROM User WHERE ic='" + data + "'";
                 if (!db->recordExists(query)) {
                     std::cout << "\x1b[6;8H" << RED << "Error: User with IC '" << data << "' does not exist." << RESET << std::endl;
-                    std::cin.ignore();
+                    std::this_thread::sleep_for(std::chrono::seconds(2));
                     break;
                 }
                 selectedSearchCriteria = "ic";  // Set search criteria to IC
@@ -867,10 +869,12 @@ void User::editUser()
     std::string data;  // User input for search.
     std::string searchColumn = "";  // Column to search by (userID, name, or IC).
     std::string query;  // Query for database search.
+    sql::PreparedStatement* pstmt = nullptr;  // Declare outside the switch.
     User user(getDB());  // Object to hold user data during editing.
 
     do
     {
+        char prefix;
         system("cls");  // Clear the screen.
 
         std::cout << CYAN << "Edit User\n" << RESET << std::endl;
@@ -973,23 +977,22 @@ void User::editUser()
                 std::cout << "\x1b[0J";
 
                 std::cout << "\nSelect the field to edit:\n";
-                std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "Name:" << RESET << std::endl;
-                std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "IC:" << RESET << std::endl;
-                std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "Phone Number:" << RESET << std::endl;
-                std::cout << (selected == 3 ? "-> " : "   ") << (selected == 3 ? BG_YELLOW : "") << "Email:" << RESET << std::endl;
-                std::cout << (selected == 4 ? "-> " : "   ") << (selected == 4 ? BG_YELLOW : "") << "Address:" << RESET << std::endl;
-                std::cout << (selected == 5 ? "-> " : "   ") << (selected == 5 ? BG_YELLOW : "") << "Role (1 for User, 2 for Admin, 3 for Superuser): " << RESET << std::endl;
-                std::cout << (selected == 6 ? "-> " : "   ") << (selected == 6 ? BG_YELLOW : "") << "Password:" << RESET << std::endl;
-                std::cout << (selected == 7 ? "-> " : "   ") << (selected == 7 ? BG_GREEN : "") << "Save and Exit" << RESET << std::endl;
+                std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "Name: " << RESET << std::endl;
+                std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "IC: " << RESET << std::endl;
+                std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "Phone Number: " << RESET << std::endl;
+                std::cout << (selected == 3 ? "-> " : "   ") << (selected == 3 ? BG_YELLOW : "") << "Email: " << RESET << std::endl;
+                std::cout << (selected == 4 ? "-> " : "   ") << (selected == 4 ? BG_YELLOW : "") << "Address: " << RESET << std::endl;
+                std::cout << (selected == 5 ? "-> " : "   ") << (selected == 5 ? BG_YELLOW : "") << "Password: " << RESET << std::endl;
+                std::cout << (selected == 6 ? "-> " : "   ") << (selected == 6 ? BG_GREEN : "") << "Save and Exit" << RESET << std::endl;
 
                 char fieldInput = _getch();
                 switch (fieldInput)
                 {
                 case KEY_UP:
-                    selected = (selected - 1 + 8) % 8;
+                    selected = (selected - 1 + 7) % 7;
                     break;
                 case KEY_DOWN:
-                    selected = (selected + 1) % 8;
+                    selected = (selected + 1) % 7;
                     break;
                 case KEY_ENTER:
                     switch (selected)
@@ -1015,35 +1018,22 @@ void User::editUser()
                         user.setEmail(data);
                         break;
                     case 4:
-                        std::cout << "\x1b[24;11H";
+                        std::cout << "\x1b[24;13H";
                         getline(std::cin, data);
                         user.setAddress(data);
                         break;
                     case 5:
-                        std::cout << "\x1b[25;55H";
-                        std::cin >> data;
-                        if (data == "1")
-                            user.setRole("User");
-                        else if (data == "2")
-                            user.setRole("Admin");
-                        else if (data == "3")
-                            user.setRole("Superuser");
-                        else
-                            std::cout << RED << "Invalid role!" << RESET << std::endl;
-                        break;
-                    case 6:
-                        std::cout << "\x1b[26;14H";
+                        std::cout << "\x1b[25;14H";
                         getline(std::cin, data);
                         user.setPassword(data);
                         break;
-                    case 7:
+                    case 6:
                         query = "UPDATE User SET "
                             "name = '" + user.getName() + "', "
                             "ic = '" + user.getIc() + "', "
                             "phoneNum = '" + user.getPhoneNum() + "', "
                             "email = '" + user.getEmail() + "', "
-                            "address = '" + user.getAddress() + "', "
-                            "role = '" + user.getRole() + "' "
+                            "address = '" + user.getAddress() + "' "
                             "WHERE userID = '" + user.getUserID() + "'";
                         db->executeQuery(query);
                         std::cout << GREEN << "User " << user.getName() << "updated successfully!" << RESET << std::endl;
@@ -1081,7 +1071,7 @@ void User::registerUser()
         std::string confirmPassword;
         sql::PreparedStatement* pstmt = nullptr;  // Declare outside the switch.
         sql::ResultSet* res = nullptr;  // Declare outside the switch.
-        
+
         do
         {
             system("cls");
@@ -1109,7 +1099,7 @@ void User::registerUser()
             std::cout << (selected == 4 ? "-> " : "   ") << (selected == 4 ? BG_YELLOW : "") << "Address: " << RESET << std::endl;
             std::cout << (selected == 5 ? "-> " : "   ") << (selected == 5 ? BG_YELLOW : "") << "Password: " << RESET << std::endl;
             std::cout << (selected == 6 ? "-> " : "   ") << (selected == 6 ? BG_YELLOW : "") << "Confirmed Password: " << RESET << std::endl;
-            std::cout << (selected == 7 ? "-> " : "   ") << (selected == 7 ? BG_YELLOW : "") << "Select Role [1 for User, 2 for Admin, 3 for Staff]: " << RESET << std::endl;
+            std::cout << (selected == 7 ? "-> " : "   ") << (selected == 7 ? BG_YELLOW : "") << "Select Role [1 for User, 2 for Staff, 3 for Admin]: " << RESET << std::endl;
             std::cout << (selected == 8 ? "-> " : "   ") << (selected == 8 ? BG_GREEN : "") << "Save and Exit " << RESET << std::endl;
 
             std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, or press Esc to quit.\n";
@@ -1128,51 +1118,12 @@ void User::registerUser()
                 case 0:
                     std::cout << "\x1b[19;10H";
                     std::getline(std::cin, data);
-
-                    // Check if username exists in the database
-                    checkQuery = "SELECT COUNT(*) FROM User WHERE name = ?";
-                    pstmt = db->getConnection()->prepareStatement(checkQuery);
-                    pstmt->setString(1, data);
-                    res = pstmt->executeQuery();
-
-                    res->next();
-                    if (res->getInt(1) > 0) // If a record is found, username exists
-                    {
-                        std::cout << RED << "Username already exists. Please choose a different one." << RESET << std::endl;
-                        std::this_thread::sleep_for(std::chrono::seconds(2));
-                        std::cout << "\x1b[2;1H";
-                        std::cout << "\x1b[K";
-                        std::cout << "\x1b[0J";
-                    }
-                    else
-                    {
-                        newUser.setName(data);
-                    }
+                    newUser.setName(data);
                     break;
                 case 1:
                     std::cout << "\x1b[20;8H";
-                    std::getline(std::cin, ic);
-
-                    // Check if IC exists in the database
-                    checkQuery = "SELECT COUNT(*) FROM User WHERE ic = ?";
-                    pstmt = db->getConnection()->prepareStatement(checkQuery);
-                    pstmt->setString(1, ic);
-                    res = pstmt->executeQuery();
-
-                    res->next();
-                    if (res->getInt(1) > 0) // If a record is found, IC exists
-                    {
-                        std::cout << RED << "IC already exists. Please choose a different one." << RESET << std::endl;
-                        std::this_thread::sleep_for(std::chrono::seconds(2));
-                        std::cout << "\x1b[5;1H";
-                        std::cout << "\x1b[K";
-                        std::cout << "\x1b[0J";
-                    }
-                    else
-                    {
-                        newUser.setIc(ic);
-                    }
-
+                    std::getline(std::cin, data);
+                    newUser.setIc(data);
                     break;
                 case 2:
                     std::cout << "\x1b[21;18H";
@@ -1214,13 +1165,13 @@ void User::registerUser()
                     switch (roleChoice)
                     {
                     case 1:
-                        data = "user";
+                        data = "User";
                         break;
                     case 2:
-                        data = "admin";
+                        data = "Staff";
                         break;
                     case 3:
-                        data = "staff";
+                        data = "Admin";
                         break;
                     default:
                         std::cout << RED << "Invalid choice. Please select 1, 2, or 3." << RESET << std::endl;
@@ -1233,7 +1184,7 @@ void User::registerUser()
                     newUser.setRole(data);
                     break;
                 case 8:
-                    prefix = (newUser.getRole() == "admin") ? 'A' : (role == "staff") ? 'S' : 'U';
+                    prefix = (newUser.getRole() == "Admin") ? 'A' : (newUser.getRole() == "Staff") ? 'S' : 'U';
                     query = "SELECT userID FROM User WHERE userID LIKE ? ORDER BY userID DESC LIMIT 1";
                     pstmt = db->getConnection()->prepareStatement(query);
 
@@ -1277,6 +1228,7 @@ void User::registerUser()
                     pstmt->executeUpdate();
                     std::cout << GREEN << "User registered successfully with userID: " << RESET << newUser.getUserID() << std::endl;
                     std::this_thread::sleep_for(std::chrono::seconds(3));
+                    selecting = false;
                     break;
                 default:
                     std::cout << "\nInvalid Input, please try again..." << std::endl;
@@ -1288,7 +1240,8 @@ void User::registerUser()
                 break;
             }
         } while (selecting);
-    }catch (const std::exception& e)
+    }
+    catch (const std::exception& e)
     {
         std::cerr << "Error: " << e.what() << std::endl;
         system("pause");
@@ -1298,4 +1251,3 @@ void User::registerUser()
         system("pause");
     }
 }
-
