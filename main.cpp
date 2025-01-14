@@ -6,11 +6,13 @@
 #include "user.h"
 #include "book.h"
 #include "tc.h"
+#include "Library.h"
 
 int main() {
     dbConnection* db = new dbConnection();
     User loggingUser(db);
     Book book(db);
+    Library library(db);
     std::string userID, password;
     bool loggedIn = false;
     int selected = 0;  // Keeps track of which option is selected.
@@ -35,6 +37,7 @@ int main() {
             std::cout << (selected == 3 ? "-> " : "   ") << (selected == 3 ? BG_YELLOW : "") << "Reporting" << RESET << std::endl;
             std::cout << (selected == 4 ? "-> " : "   ") << (selected == 4 ? BG_YELLOW : "") << "Library" << RESET << std::endl;
             std::cout << (selected == 5 ? "-> " : "   ") << (selected == 5 ? BG_YELLOW : "") << "User Management" << RESET << std::endl;
+            std::cout << (selected == 6 ? "-> " : "   ") << (selected == 6 ? BG_YELLOW : "") << "Settings" << RESET << std::endl;
 
             std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, or press Esc to quit.\n";
 
@@ -43,10 +46,10 @@ int main() {
             std::string exitpass;
             switch (c) {
             case KEY_UP:
-                selected = (selected - 1 + 6) % 6; // Wrap around to the last option if at the top.
+                selected = (selected - 1 + 7) % 7; // Wrap around to the last option if at the top.
                 break;
             case KEY_DOWN:
-                selected = (selected + 1) % 6; // Wrap around to the first option if at the bottom.
+                selected = (selected + 1) % 7; // Wrap around to the first option if at the bottom.
                 break;
             case KEY_ENTER:
                 switch (selected) {
@@ -54,7 +57,7 @@ int main() {
                     loggingUser.userProfile();
                     break;
                 case 1:
-                    // Borrowing module
+                    library.borrowBookMenu();
                     break;
                 case 2:
                     // Returning Book module
@@ -67,6 +70,9 @@ int main() {
                     break;
                 case 5:
                     loggingUser.userManagementMenu();
+                    break;
+                case 6:
+                    library.settings();
                     break;
                 default:
                     std::cout << "\nInvalid Input, please try again..." << std::endl;

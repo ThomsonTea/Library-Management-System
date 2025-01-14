@@ -64,6 +64,7 @@ private:
     std::string password;
     std::string role;
 
+
     dbConnection* db;
 };
 

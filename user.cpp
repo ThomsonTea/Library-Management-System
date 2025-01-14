@@ -8,6 +8,7 @@
 #include <tabulate/table.hpp>
 #include "dbConnection.h"
 #include "table.h"
+#include "time.h"
 #include "tc.h"
 
 User::User(dbConnection* connection) : db(connection) {}
@@ -606,7 +607,6 @@ void User::userManagementMenu()
 
         // Capture user input for navigation
         char c = _getch(); // Use _getch() to get key press without waiting for enter.
-        std::string exitpass;
         switch (c) {
         case KEY_UP:
             selected = (selected - 1 + 4) % 4; // Wrap around to the last option if at the top.
@@ -1286,8 +1286,7 @@ void User::registerUser()
                 break;
             }
         } while (selecting);
-    }
-    catch (const std::exception& e)
+    }catch (const std::exception& e)
     {
         std::cerr << "Error: " << e.what() << std::endl;
         system("pause");

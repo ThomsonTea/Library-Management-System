@@ -18,7 +18,7 @@ public:
 
     void executeQuery(const std::string& query);
     void fetchAndDisplayData(const std::string& query);
-    std::string extractUserIDFromQuery(const std::string& query);
+    std::vector<std::map<std::string, std::string>> fetchResults(const std::string& query);
     bool recordExists(const std::string& query);
     sql::Connection* getConnection();
 

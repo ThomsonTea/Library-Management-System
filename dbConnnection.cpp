@@ -58,6 +58,7 @@ void dbConnection::executeQuery(const std::string& query)
     {
         std::cerr << RED << YELLOW << "Error executing query: " << query << std::endl;
         std::cerr << "SQLException: " << e.what()  << RESET << std::endl;
+        system("pause");
     }
 }
 
@@ -114,6 +115,7 @@ void dbConnection::fetchAndDisplayData(const std::string& query)
     catch (sql::SQLException& e)
     {
         std::cerr << "Error fetching data: " << e.what() << std::endl;
+        system("pause");
     }
 }
 
@@ -128,6 +130,44 @@ bool dbConnection::recordExists(const std::string& query) {
     }
     catch (sql::SQLException& e) {
         std::cerr << "Error checking record existence: " << e.what() << std::endl;
+        system("pause");
         return false;
     }
+}
+
+std::vector<std::map<std::string, std::string>> dbConnection::fetchResults(const std::string& query)
+{
+    std::vector<std::map<std::string, std::string>> results; // To hold the results  
+    if (!con)
+    {
+        std::cerr << "No database connection available!" << std::endl;
+        return results; // Return empty results  
+    }
+    try
+    {
+        std::unique_ptr<sql::Statement> stmt(con->createStatement());
+        std::unique_ptr<sql::ResultSet> res(stmt->executeQuery(query));
+
+        // Get the metadata for column information  
+        sql::ResultSetMetaData* meta = res->getMetaData();
+        int columnCount = meta->getColumnCount();
+
+        // Process the result set  
+        while (res->next())
+        {
+            std::map<std::string, std::string> row;
+            for (int i = 1; i <= columnCount; ++i)
+            {
+                row[meta->getColumnLabel(i)] = res->getString(i);
+            }
+            results.push_back(row);
+        }
+    }
+    catch (sql::SQLException& e)
+    {
+        std::cerr << RED << "Error executing query: " << query << std::endl;
+        std::cerr << "SQLException: " << e.what() << RESET << std::endl;
+        system("pause");
+    }
+    return results; // Return the results  
 }
