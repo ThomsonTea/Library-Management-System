@@ -18,7 +18,9 @@ int main() {
     int selected = 0;  // Keeps track of which option is selected.
     bool selecting = true;
 
+
     while (true) {
+        library.updateOverdueStatus();
         // User login verification (you can define userVerify logic in the User class)
         while (!loggedIn) {
             if (loggingUser.userVerify()) {
@@ -28,6 +30,7 @@ int main() {
 
         // Main menu loop
         do {
+
             system("cls");
             std::cout << CYAN << "Welcome to Library Management System, " << BOLD << loggingUser.getName() << "!" << RESET << std::endl;
             std::cout << "\nModule: " << std::endl;
@@ -60,7 +63,7 @@ int main() {
                     library.borrowBookMenu();
                     break;
                 case 2:
-                    // Returning Book module
+                    library.returnBookMenu();
                     break;
                 case 3:
                     // Report

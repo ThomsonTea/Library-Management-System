@@ -21,7 +21,9 @@ public:
     std::vector<std::map<std::string, std::string>> fetchResults(const std::string& query);
     bool recordExists(const std::string& query);
     int getInt(const std::string& query, const std::vector<std::string>& params);
+    std::string getString(const std::string& query, const std::vector<std::string>& params);
     sql::Connection* getConnection();
+
 
 private:
     const std::string server = "tcp://127.0.0.1:3306";

@@ -14,15 +14,18 @@ public:
 
     // Method to borrow a book
     void borrowBookMenu();
-    std::string generateDateTime();
+    void returnBookMenu();
+    std::string generateCurrentDateTime();
     std::string generateDueDate(int days);
     std::string generateLoanID(sql::Connection* conn);
     void changeMaxBookBorrow();
     void changeBorrowingDuration();
     void settings();
     void borrowBook(User user);
+    void returnBook(User user);
     int getBorrowDuration(const std::string& userRole);
-    void checkBorrowLimit(const std::string& userID);
+    void updateOverdueStatus();
+
 private:
 
     dbConnection* db;  // Pointer to the database connection

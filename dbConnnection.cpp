@@ -12,6 +12,7 @@
 #include "dbConnection.h"
 #include "tabulate/table.hpp"
 #include "table.h"
+#include <chrono>
 
 using namespace tabulate;
 
@@ -193,8 +194,40 @@ int dbConnection::getInt(const std::string& query, const std::vector<std::string
     catch (sql::SQLException& e)
     {
         std::cerr << "SQL Error: " << e.what() << std::endl;
+        system("pause");
     }
 
     // Return -1 or an appropriate error value if no result was found
     return -1;
+}
+
+std::string dbConnection::getString(const std::string& query, const std::vector<std::string>& params)
+{
+    try
+    {
+        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(query));
+
+        // Bind parameters to the prepared statement
+        for (size_t i = 0; i < params.size(); ++i)
+        {
+            pstmt->setString(i + 1, params[i]);
+        }
+
+        // Execute the query
+        std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
+
+        // Retrieve and return the string result
+        if (res->next())
+        {
+            return res->getString(1); // Assuming the string is the first column in the result set
+        }
+    }
+    catch (sql::SQLException& e)
+    {
+        std::cerr << "SQL Error: " << e.what() << std::endl;
+        system("pause");
+    }
+
+    // Return an empty string or an appropriate error value if no result was found
+    return "";
 }
