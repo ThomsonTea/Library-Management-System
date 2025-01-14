@@ -84,6 +84,7 @@ void Library::borrowBookMenu()
                     std::this_thread::sleep_for(std::chrono::seconds(2));
                     continue; // Allow re-entry of User ID  
                 }
+                
                 userSelected = true;
                 break;
             case 1:
@@ -208,10 +209,11 @@ void Library::borrowBook(User user)
 
                         std::string maxBorrowQuery = "SELECT maxBorrowable FROM BorrowingLimits WHERE role = ?";
                         std::vector<std::string> maxBorrowParams = { user.getRole() };
+                        std::cout << user.getRole() << std::endl;
                         int maxBorrowCount = db->getInt(maxBorrowQuery, maxBorrowParams);
-
+                        std::cout << borrowedCount << std::endl << maxBorrowCount;
                         // Assuming max borrow limit is 3 for this example  
-                        if (borrowedCount > maxBorrowCount) {
+                        if (borrowedCount >= maxBorrowCount) {
                             std::cout << RED << "Error: You have reached the maximum borrowing limit!" << RESET << std::endl;
                             std::this_thread::sleep_for(std::chrono::seconds(2));
                             continue;
@@ -231,8 +233,6 @@ void Library::borrowBook(User user)
                         insertLoanQuery =
                             "INSERT INTO Loan (loanID, userID, bookID, borrow_date, due_date, bookStatus) VALUES ('" +
                             loanID + "', '" + user.getUserID() + "', '" + book.getBookID() + "', '" + borrowDate + "', '" + dueDate + "', 'Borrowing')";
-
-                        std::cout << "Debug: Executing query: " << insertLoanQuery << std::endl;
 
                         db->executeQuery(insertLoanQuery);
 
@@ -363,47 +363,44 @@ void Library::settings()
     int selected = 0;  // Keeps track of which option is selected.
     bool selecting = true;
     Library library(db);
-    while (true) {
-        do {
-            system("cls");
-            std::cout << CYAN << "Welcome to Library Management System! " << RESET << std::endl;
-            std::cout << "\Settings: " << std::endl;
-            std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "Change Max Book Borrowed" << RESET << std::endl;
-            std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Change Borrowing Duration" << RESET << std::endl;
+    do {
+        system("cls");
+        std::cout << CYAN << "Welcome to Library Management System! " << RESET << std::endl;
+        std::cout << "\Settings: " << std::endl;
+        std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "Change Max Book Borrowed" << RESET << std::endl;
+        std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Change Borrowing Duration" << RESET << std::endl;
 
-            std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, or press Esc to quit.\n";
+        std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, or press Esc to quit.\n";
 
-            // Capture user input for navigation
-            char c = _getch(); // Use _getch() to get key press without waiting for enter.
-            std::string exitpass;
-            switch (c) {
-            case KEY_UP:
-                selected = (selected - 1 + 2) % 2; // Wrap around to the last option if at the top.
+        // Capture user input for navigation
+        char c = _getch(); // Use _getch() to get key press without waiting for enter.
+        std::string exitpass;
+        switch (c) {
+        case KEY_UP:
+            selected = (selected - 1 + 2) % 2; // Wrap around to the last option if at the top.
+            break;
+        case KEY_DOWN:
+            selected = (selected + 1) % 2; // Wrap around to the first option if at the bottom.
+            break;
+        case KEY_ENTER:
+            switch (selected) {
+            case 0:
+                library.changeMaxBookBorrow();
                 break;
-            case KEY_DOWN:
-                selected = (selected + 1) % 2; // Wrap around to the first option if at the bottom.
+            case 1:
+                library.changeBorrowingDuration();
                 break;
-            case KEY_ENTER:
-                switch (selected) {
-                case 0:
-                    library.changeMaxBookBorrow();
-                    break;
-                case 1:
-                    library.changeBorrowingDuration();
-                    break;
-                default:
-                    std::cout << "\nInvalid Input, please try again..." << std::endl;
-                    break;
-                }
-                break;
-            case KEY_ESC:
-                selecting = false;
+            default:
+                std::cout << "\nInvalid Input, please try again..." << std::endl;
                 break;
             }
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        } while (selecting);
-    }
+            break;
+        case KEY_ESC:
+            selecting = false;
+            break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    } while (selecting);
 }
 
 void Library::changeMaxBookBorrow() {
@@ -443,25 +440,39 @@ void Library::changeMaxBookBorrow() {
         case KEY_ENTER:
             std::cout << YELLOW << "\n\nEnter new maximum books that can be borrowed: " << RESET << std::endl;
             std::cout << "\x1b[22;47H";
+            std::cin.ignore();
             getline(std::cin, data);
 
             // Validate the input  
-            if (stoi(data) <= 0 || !isNumber(data)) {
-                std::cout << "Error: The maximum borrowing limit must be a positive integer!" << std::endl;
-                std::this_thread::sleep_for(std::chrono::seconds(2)); // Pause for 2 seconds  
-                break; // Go back to the menu  
+            try {
+                int maxBooks = std::stoi(data); // Convert input string to integer
+                if (maxBooks <= 0) {
+                    std::cout << "Error: The maximum borrowing limit must be a positive integer!" << std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(2)); // Pause for 2 seconds
+                    break; // Go back to the menu
+                }
+            }
+            catch (std::invalid_argument& e) {
+                std::cout << "Error: Invalid input! Please enter a valid number." << std::endl;
+                std::this_thread::sleep_for(std::chrono::seconds(2)); // Pause for 2 seconds
+                break; // Go back to the menu
+            }
+            catch (std::out_of_range& e) {
+                std::cout << "Error: The number is too large!" << std::endl;
+                std::this_thread::sleep_for(std::chrono::seconds(2)); // Pause for 2 seconds
+                break; // Go back to the menu
             }
 
             // Prepare the update query based on the selected role  
             switch (selected) {
             case 0:
-                updateQuery = "UPDATE BorrowingLimits SET maxBorrowable='" + data + "' WHERE role='User'";
+                updateQuery = "UPDATE BorrowingLimits SET maxBorrowable='" + data + "' WHERE role = 'User'";
                 break;
             case 1:
-                updateQuery = "UPDATE BorrowingLimits SET maxBorrowable='" + data + "' WHERE role='Staff'";
+                updateQuery = "UPDATE BorrowingLimits SET maxBorrowable='" + data + "' WHERE role = 'Staff'";
                 break;
             case 2:
-                updateQuery = "UPDATE BorrowingLimits SET maxBorrowable='" + data + "' WHERE role='Admin'";
+                updateQuery = "UPDATE BorrowingLimits SET maxBorrowable='" + data + "' WHERE role = 'Admin'";
                 break;
             default:
                 std::cout << "Invalid Input, please try again..." << std::endl;
@@ -492,9 +503,10 @@ void Library::changeBorrowingDuration() {
         "FROM BorrowingLimits "
         "ORDER BY FIELD(role, 'User', 'Staff', 'Admin')";
 
-    std::string updateQuery, data;
-
-    while (selecting) {
+    std::string updateQuery;
+    std::cin.ignore();
+    do{
+        std::string data;
         system("cls");
         std::cout << "Welcome to Library Management System! " << std::endl;
 
@@ -519,26 +531,39 @@ void Library::changeBorrowingDuration() {
             break;
         case KEY_ENTER:
             std::cout << YELLOW << "\n\nEnter new borrowing duration (in days): " << RESET << std::endl;
-            std::cout << "\x1b[22;47H";
+            std::cout << "\x1b[22;40H";
             getline(std::cin, data);
 
             // Validate the input  
-            if (stoi(data) <= 0 || !isNumber(data)) {
-                std::cout << "Error: The borrowing duration must be a positive integer!" << std::endl;
-                std::this_thread::sleep_for(std::chrono::seconds(2)); // Pause for 2 seconds  
-                break; // Go back to the menu  
+            try {
+                int borrowDuration = std::stoi(data); // Convert input string to integer
+                if (borrowDuration <= 0) {
+                    std::cout << "Error: The borrowing duration must be a positive integer!" << std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(2)); // Pause for 2 seconds
+                    break; // Go back to the menu
+                }
+            }
+            catch (std::invalid_argument& e) {
+                std::cout << "Error: Invalid input! Please enter a valid number." << std::endl;
+                std::this_thread::sleep_for(std::chrono::seconds(2)); // Pause for 2 seconds
+                break; // Go back to the menu
+            }
+            catch (std::out_of_range& e) {
+                std::cout << "Error: The number is too large!" << std::endl;
+                std::this_thread::sleep_for(std::chrono::seconds(2)); // Pause for 2 seconds
+                break; // Go back to the menu
             }
 
             // Prepare the update query based on the selected role  
             switch (selected) {
             case 0:
-                updateQuery = "UPDATE BorrowingLimits SET borrowDuration='" + data + "' WHERE role='User'";
+                updateQuery = "UPDATE BorrowingLimits SET borrowDuration='" + data + "' WHERE role = 'User'";
                 break;
             case 1:
-                updateQuery = "UPDATE BorrowingLimits SET borrowDuration='" + data + "' WHERE role='Staff'";
+                updateQuery = "UPDATE BorrowingLimits SET borrowDuration='" + data + "' WHERE role = 'Staff'";
                 break;
             case 2:
-                updateQuery = "UPDATE BorrowingLimits SET borrowDuration='" + data + "' WHERE role='Admin'";
+                updateQuery = "UPDATE BorrowingLimits SET borrowDuration='" + data + "' WHERE role = 'Admin'";
                 break;
             default:
                 std::cout << "Invalid Input, please try again..." << std::endl;
@@ -547,7 +572,7 @@ void Library::changeBorrowingDuration() {
 
             // Execute the update query  
             db->executeQuery(updateQuery);
-            std::cout << "Successfully updated the borrowing duration." << std::endl;
+            std::cout << GREEN << "Successfully updated the borrowing duration." << RESET << std::endl;
             std::this_thread::sleep_for(std::chrono::seconds(2)); // Pause for 2 seconds  
             break;
         case KEY_ESC:
@@ -556,10 +581,11 @@ void Library::changeBorrowingDuration() {
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Small delay for better UX  
-    }
+    } while (selecting);
 
     delete db; // Clean up the database connection  
 }
+
 
 int Library::getBorrowDuration(const std::string& userRole)
 {
