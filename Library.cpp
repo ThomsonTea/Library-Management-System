@@ -9,148 +9,272 @@
 #include <conio.h>
 #include "tc.h"
 // Constructor that takes a dbConnection pointer
-Library::Library(dbConnection* db) {
+Library::Library(dbConnection* db) 
+{
     this->db = db; // Assuming you have a member variable db  
 }
 
-
 void Library::borrowBookMenu()
 {
-    std::string userID, bookID;
-    bool isBorrowing = true;
-
-    while (isBorrowing) // Keep the menu active until the user decides to exit  
+    int selected = 0;  // Keeps track of which option is selected.
+    bool borrowing = true;
+    std::string query;
+    std::string userID;
+    std::string displayUserQuery;
+    std::string roleQuery;
+    std::string checkUserQuery;
+    bool userSelected = false;
+    User user(db);
+    std::vector<std::map<std::string, std::string>> roleResult;
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Clear the input buffer
+    std::string userRole;
+    do
     {
         system("cls");
-        std::cout << CYAN << "Borrowing Module" << RESET << std::endl;
-        std::cout << "Insert User ID:\n";
 
-        // Input User ID  
-        std::cout << "User ID: ";
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Clear the input buffer  
-        std::getline(std::cin, userID);
 
-        // Check if the user wants to exit  
-        if (userID.empty() && _kbhit() && _getch() == KEY_ESC) {
-            isBorrowing = false; // Exit if Esc is pressed  
-            continue;
-        }
+        std::cout << CYAN << "Welcome to Library !\n" << RESET << std::endl;
+        std::cout << "Borrowing:" << std::endl;
+        std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "User ID: " << RESET << std::endl;
+        std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_GREEN : "") << "CONFIRM" << RESET << std::endl;
+        std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_RED : "") << "RETURN BACK" << RESET << std::endl;
 
-        // Validate User ID  
-        std::string checkUserQuery = "SELECT * FROM User WHERE userID='" + userID + "'";
-        if (!db->recordExists(checkUserQuery))
+        std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select or press Esc to quit.\n";
+
+        if (userSelected)
         {
-            std::cout << RED << "Error: User not found!" << RESET << std::endl;
-            std::this_thread::sleep_for(std::chrono::seconds(2));
-            continue; // Allow re-entry of User ID  
+            // Fetch user role  
+            roleQuery = "SELECT role FROM User WHERE userID='" + user.getUserID() + "'";
+            roleResult = db->fetchResults(roleQuery);
+            if (roleResult.empty()) {
+                std::cout << RED << "Error: Unable to fetch user role!" << RESET << std::endl;
+                std::this_thread::sleep_for(std::chrono::seconds(2));
+                break;
+            }
+            userRole = roleResult[0]["role"];
+
+            displayUserQuery = 
+                "SELECT b.bookID, b.title, b.author, l.borrow_date, l.due_date, l.bookStatus "  
+                "FROM Loan l "  
+                "JOIN Book b ON l.bookID = b.bookID "  
+                "WHERE l.userID = '" + user.getUserID() + "' AND l.bookStatus = 'Borrowing'" ;
+
+            db->fetchAndDisplayData(displayUserQuery);
         }
 
-        // Fetch user role  
-        std::string roleQuery = "SELECT role FROM User WHERE userID='" + userID + "'";
-        std::vector<std::map<std::string, std::string>> roleResult = db->fetchResults(roleQuery);
-        if (roleResult.empty()) {
-            std::cout << RED << "Error: Unable to fetch user role!" << RESET << std::endl;
-            std::this_thread::sleep_for(std::chrono::seconds(2));
-            continue;
+        char c = _getch(); // Use _getch() to get key press without waiting for enter.
+        switch (c) {
+        case KEY_UP:
+            selected = (selected - 1 + 3) % 3; // Wrap around to the last option if at the top.
+            break;
+        case KEY_DOWN:
+            selected = (selected + 1) % 3; // Wrap around to the first option if at the bottom.
+            break;
+        case KEY_ENTER:
+            switch (selected) {
+            case 0:
+                std::cout << "\x1b[4;13H";
+                getline(std::cin, userID);
+                user.retrieveUserFromDB(userID);
+                // Validate User ID  
+                checkUserQuery = "SELECT * FROM User WHERE userID='" + user.getUserID() + "'";
+                if (!db->recordExists(checkUserQuery))
+                {
+                    std::cout << RED << "Error: User not found!" << RESET << std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(2));
+                    continue; // Allow re-entry of User ID  
+                }
+                userSelected = true;
+                break;
+            case 1:
+                borrowBook(user);
+                break;
+            case 2:
+                borrowing = false;
+                break;
+            default:
+                std::cout << "\nInvalid Input, please try again..." << std::endl;
+                break;
+            }
+            break;
+        case KEY_ESC:
+            borrowing = false;
+            break;
         }
-        std::string userRole = roleResult[0]["role"];
-
-        // Fetch max borrowable books for the user's role  
-        std::string limitQuery = "SELECT maxBorrowable FROM BorrowingLimits WHERE role='" + userRole + "'";
-        std::vector<std::map<std::string, std::string>> limitResult = db->fetchResults(limitQuery);
-        if (limitResult.empty()) {
-            std::cout << RED << "Error: Unable to fetch borrowing limit for role!" << RESET << std::endl;
-            std::this_thread::sleep_for(std::chrono::seconds(2));
-            continue;
-        }
-        int maxBorrowable = std::stoi(limitResult[0]["maxBorrowable"]);
-
-        // Count currently borrowed books  
-        std::string countBorrowedQuery = "SELECT COUNT(*) AS borrowedCount FROM Loan WHERE userID='" + userID + "'";
-        std::vector<std::map<std::string, std::string>> countResult = db->fetchResults(countBorrowedQuery);
-        int borrowedCount = countResult.empty() ? 0 : std::stoi(countResult[0]["borrowedCount"]);
-
-        // Check if the user has reached the borrowing limit  
-        if (borrowedCount >= maxBorrowable) {
-            std::cout << RED << "Error: You have reached the maximum borrowing limit of " << maxBorrowable << " books!" << RESET << std::endl;
-            std::this_thread::sleep_for(std::chrono::seconds(2));
-            continue; // Allow re-entry of User ID  
-        }
-
-        // Display user details  
-        std::string displayUserQuery = "SELECT "
-            "userID AS 'User ID', "
-            "name AS 'Full Name', "
-            "ic AS 'IC', "
-            "phoneNum AS 'Phone Number', "
-            "email AS 'Email', "
-            "address AS 'Address', "
-            "role AS 'Role' "
-            "FROM User WHERE userID='" + userID + "'";
-        db->fetchAndDisplayData(displayUserQuery);
-
-        // Input Book ID  
-        std::cout << "\nInsert Book ID (or press Esc to exit): ";
-        std::getline(std::cin, bookID);
-
-        // Check if the user wants to exit  
-        if (bookID.empty() && _kbhit() && _getch() == KEY_ESC) {
-            isBorrowing = false; // Exit if Esc is pressed  
-            continue;
-        }
-
-        // Validate Book ID  
-        std::string checkBookQuery = "SELECT * FROM Book WHERE bookID='" + bookID + "'";
-        if (!db->recordExists(checkBookQuery))
-        {
-            std::cout << RED << "Error: Book not found!" << RESET << std::endl;
-            std::this_thread::sleep_for(std::chrono::seconds(2));
-            continue; // Allow re-entry of Book ID  
-        }
-
-        // Check book status and quantity  
-        std::string checkAvailabilityQuery = "SELECT status, quantity FROM Book WHERE bookID='" + bookID + "'";
-
-        // Use the fetchResults method to get the results  
-        std::vector<std::map<std::string, std::string>> result = db->fetchResults(checkAvailabilityQuery);
-
-        if (result.empty()) {
-            std::cout << RED << "Error: Book not found!" << RESET << std::endl;
-            std::this_thread::sleep_for(std::chrono::seconds(2));
-            continue; // Allow re-entry of Book ID  
-        }
-
-        std::string status = result[0]["status"]; // Assuming result is a map or similar structure  
-        int quantity = std::stoi(result[0]["quantity"]); // Convert quantity to int  
-
-        if (status == "Unavailable" || quantity <= 0) {
-            std::cout << RED << "Error: Book is not available for borrowing!" << RESET << std::endl;
-            std::this_thread::sleep_for(std::chrono::seconds(2));
-            continue; // Allow re-entry of Book ID  
-        }
-
-        // Generate loan ID and proceed to borrow the book  
-        std::string loanID = generateLoanID(db->getConnection());
-        std::string currentTime = generateDateTime();
-        std::string dueTime = generateDueDate(14); // Assuming 14 days for due date  
-
-        std::string borrowQuery = "INSERT INTO Loan (loanID, userID, bookID, borrow_date, due_date) VALUES ('" + loanID + "','" +
-            userID + "', '" + bookID + "', '" + currentTime + "', '" + dueTime + "')";
-
-        // Print the query for debugging  
-        std::cout << "Executing query: " << borrowQuery << std::endl;
-
-        // Execute the query  
-        db->executeQuery(borrowQuery);
-
-        // Update the quantity of the book  
-        std::string updateQuantityQuery = "UPDATE Book SET quantity = quantity - 1 WHERE bookID='" + bookID + "'";
-        db->executeQuery(updateQuantityQuery);
-
-        std::cout << GREEN << "Book borrowed successfully!" << RESET << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(2));
-    }
+    } while (borrowing);
 }
+
+void Library::borrowBook(User user)
+{
+    int selected = 0;  // Keeps track of which option is selected.  
+    bool borrowing = true;
+    std::string bookID;
+    std::string checkBookQuery;
+    std::string insertLoanQuery;
+    std::string bookQuery;
+    bool bookConfirmed = false;
+    Book book(db);
+    std::vector<std::map<std::string, std::string>> result;
+
+    // Declare quantity outside the switch statement and initialize it to 0  
+    int quantity = 0;
+
+    do
+    {
+        system("cls");
+        std::cout << "Borrowing book for User: " << user.getUserID() << std::endl;
+        std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "Enter Book ID: " << RESET << std::endl;
+        std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_GREEN : "") << "CONFIRM" << RESET << std::endl;
+        std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_RED : "") << "RETURN BACK" << RESET << std::endl;
+
+        std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, or press Esc to quit.\n";
+
+        if (bookConfirmed)
+        {
+            // Fetch user role  
+            bookQuery = "SELECT * FROM Book WHERE bookID='" + book.getBookID() + "'";
+
+            db->fetchAndDisplayData(bookQuery);
+        }
+
+        char c = _getch(); // Use _getch() to get key press without waiting for enter.  
+        switch (c) {
+        case KEY_UP:
+            selected = (selected - 1 + 3) % 3; // Wrap around to the last option if at the top.  
+            break;
+        case KEY_DOWN:
+            selected = (selected + 1) % 3; // Wrap around to the first option if at the bottom.  
+            break;
+        case KEY_ENTER:
+            switch (selected) {
+            case 0:  // Enter Book ID  
+                std::cout << "\x1b[2;19H"; // Move cursor to the input position
+                std::getline(std::cin, bookID);
+
+                try {
+                    // Check book status and quantity  
+                    checkBookQuery = "SELECT quantity, title, status FROM Book WHERE bookID='" + bookID + "'";
+                    result = db->fetchResults(checkBookQuery);
+
+                    if (result.empty()) {
+                        std::cout << RED << "Error: Book does not exist!" << RESET << std::endl;
+                        std::this_thread::sleep_for(std::chrono::seconds(2));
+                        continue; // Allow re-entry of Book ID  
+                    }
+
+                    // Check status explicitly  
+                    if (result[0]["status"] != "Available") {
+                        std::cout << RED << "Error: Book is not available!" << RESET << std::endl;
+                        std::this_thread::sleep_for(std::chrono::seconds(2));
+                        continue;
+                    }
+
+                    // Ensure quantity is checked correctly  
+                    quantity = std::stoi(result[0]["quantity"]); // Update the pre-declared quantity   
+                    if (quantity <= 0) {
+                        std::cout << RED << "Error: Book is out of stock!" << RESET << std::endl;
+                        std::this_thread::sleep_for(std::chrono::seconds(2));
+                        continue; // Allow re-entry of Book ID  
+                    }
+
+                    // Retrieve book details  
+                    book.retrieveBookFromDB(bookID);
+                    bookConfirmed = true;  // Book is valid  
+                }
+                catch (const std::exception& e) {
+                    std::cout << RED << "Error processing book: " << e.what() << RESET << std::endl;
+                    std::cerr << "Debug: Query was: " << checkBookQuery << std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(2));
+                    break;
+                }
+                break;
+
+            case 1:  // CONFIRM  
+                if (bookConfirmed && !book.getBookID().empty()) {
+                    try {
+                        if (user.getUserID().empty()) {
+                            std::cout << RED << "Error: User ID is not set!" << RESET << std::endl;
+                            std::this_thread::sleep_for(std::chrono::seconds(2));
+                            continue;
+                        }
+
+
+                        // Check user's borrowing limit  
+                        std::string checkCountBorrowingQuery =
+                            "SELECT COUNT(*) AS borrowed_count FROM Loan WHERE userID=? AND bookStatus='Borrowing'";
+
+                        std::vector<std::string> countBorrowingParams = { user.getUserID() };
+                        int borrowedCount = db->getInt(checkCountBorrowingQuery, countBorrowingParams);
+
+                        std::string maxBorrowQuery = "SELECT maxBorrowable FROM BorrowingLimits WHERE role = ?";
+                        std::vector<std::string> maxBorrowParams = { user.getRole() };
+                        int maxBorrowCount = db->getInt(maxBorrowQuery, maxBorrowParams);
+
+                        // Assuming max borrow limit is 3 for this example  
+                        if (borrowedCount > maxBorrowCount) {
+                            std::cout << RED << "Error: You have reached the maximum borrowing limit!" << RESET << std::endl;
+                            std::this_thread::sleep_for(std::chrono::seconds(2));
+                            continue;
+                        }
+
+                        // Generate Loan ID  
+                        std::string loanID = generateLoanID(db->getConnection());
+
+                        // Get borrow duration based on user role  
+                        int duration = getBorrowDuration(user.getRole());
+
+                        // Generate dates  
+                        std::string borrowDate = generateDateTime();
+                        std::string dueDate = generateDueDate(duration);
+
+                        // Insert into Loan table  
+                        insertLoanQuery =
+                            "INSERT INTO Loan (loanID, userID, bookID, borrow_date, due_date, bookStatus) VALUES ('" +
+                            loanID + "', '" + user.getUserID() + "', '" + book.getBookID() + "', '" + borrowDate + "', '" + dueDate + "', 'Borrowing')";
+
+                        std::cout << "Debug: Executing query: " << insertLoanQuery << std::endl;
+
+                        db->executeQuery(insertLoanQuery);
+
+                        // Update book quantity and status if necessary  
+                        std::string updateBookQuery = "UPDATE Book SET quantity = quantity - 1 WHERE bookID='" + book.getBookID() + "'";
+                        db->executeQuery(updateBookQuery);
+
+                        std::cout << GREEN << "Book borrowed successfully!" << std::endl;
+                        std::cout << "Book: " << book.getBookID() << RESET << std::endl;
+                        std::this_thread::sleep_for(std::chrono::seconds(2));
+                        borrowing = false;  // Exit the borrowing module  
+                    }
+                    catch (const std::exception& e) {
+                        std::cout << RED << "Error: " << e.what() << RESET << std::endl;
+                        std::cerr << "Debug: Query was: " << insertLoanQuery << std::endl;
+                        std::this_thread::sleep_for(std::chrono::seconds(2));
+                    }
+                }
+                else {
+                    std::cout << RED << "Please select a book before confirming!" << RESET << std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(2));
+                }
+                break;
+
+            case 2:  // RETURN BACK  
+                borrowing = false;
+                break;
+
+            default:
+                std::cout << "\nInvalid Input, please try again..." << std::endl;
+                std::this_thread::sleep_for(std::chrono::seconds(2));
+                break;
+            }
+            break;
+
+        case KEY_ESC:
+            borrowing = false;
+            break;
+        }
+    } while (borrowing);
+}
+
 
 std::string Library::generateDateTime()
 {
@@ -257,7 +381,7 @@ void Library::settings()
                 selected = (selected - 1 + 2) % 2; // Wrap around to the last option if at the top.
                 break;
             case KEY_DOWN:
-                selected = (selected + 2) % 2; // Wrap around to the first option if at the bottom.
+                selected = (selected + 1) % 2; // Wrap around to the first option if at the bottom.
                 break;
             case KEY_ENTER:
                 switch (selected) {
@@ -265,7 +389,7 @@ void Library::settings()
                     library.changeMaxBookBorrow();
                     break;
                 case 1:
-                    //library.changeBorrowingDuration();
+                    library.changeBorrowingDuration();
                     break;
                 default:
                     std::cout << "\nInvalid Input, please try again..." << std::endl;
@@ -358,4 +482,102 @@ void Library::changeMaxBookBorrow() {
     }
 
     delete db; // Clean up the database connection  
+}
+
+void Library::changeBorrowingDuration() {
+    dbConnection* db = new dbConnection();
+    int selected = 0;  // Keeps track of which option is selected.  
+    bool selecting = true;
+    std::string durationQuery = "SELECT role, borrowDuration "
+        "FROM BorrowingLimits "
+        "ORDER BY FIELD(role, 'User', 'Staff', 'Admin')";
+
+    std::string updateQuery, data;
+
+    while (selecting) {
+        system("cls");
+        std::cout << "Welcome to Library Management System! " << std::endl;
+
+        // Fetch and display current borrowing durations  
+        db->fetchAndDisplayData(durationQuery);
+
+        std::cout << "\nSelect Role: " << std::endl;
+        std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "User" << RESET << std::endl;
+        std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Staff" << RESET << std::endl;
+        std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "Admin" << RESET << std::endl;
+
+        std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, or press Esc to quit.\n";
+
+        // Capture user input for navigation  
+        char c = _getch(); // Use _getch() to get key press without waiting for enter.  
+        switch (c) {
+        case KEY_UP:
+            selected = (selected - 1 + 3) % 3; // Wrap around to the last option if at the top.  
+            break;
+        case KEY_DOWN:
+            selected = (selected + 1) % 3; // Wrap around to the first option if at the bottom.  
+            break;
+        case KEY_ENTER:
+            std::cout << YELLOW << "\n\nEnter new borrowing duration (in days): " << RESET << std::endl;
+            std::cout << "\x1b[22;47H";
+            getline(std::cin, data);
+
+            // Validate the input  
+            if (stoi(data) <= 0 || !isNumber(data)) {
+                std::cout << "Error: The borrowing duration must be a positive integer!" << std::endl;
+                std::this_thread::sleep_for(std::chrono::seconds(2)); // Pause for 2 seconds  
+                break; // Go back to the menu  
+            }
+
+            // Prepare the update query based on the selected role  
+            switch (selected) {
+            case 0:
+                updateQuery = "UPDATE BorrowingLimits SET borrowDuration='" + data + "' WHERE role='User'";
+                break;
+            case 1:
+                updateQuery = "UPDATE BorrowingLimits SET borrowDuration='" + data + "' WHERE role='Staff'";
+                break;
+            case 2:
+                updateQuery = "UPDATE BorrowingLimits SET borrowDuration='" + data + "' WHERE role='Admin'";
+                break;
+            default:
+                std::cout << "Invalid Input, please try again..." << std::endl;
+                break;
+            }
+
+            // Execute the update query  
+            db->executeQuery(updateQuery);
+            std::cout << "Successfully updated the borrowing duration." << std::endl;
+            std::this_thread::sleep_for(std::chrono::seconds(2)); // Pause for 2 seconds  
+            break;
+        case KEY_ESC:
+            selecting = false; // Exit the menu  
+            break;
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Small delay for better UX  
+    }
+
+    delete db; // Clean up the database connection  
+}
+
+int Library::getBorrowDuration(const std::string& userRole)
+{
+    try
+    {
+        std::string query = "SELECT borrowDuration FROM BorrowingLimits WHERE role='" + userRole + "'";
+        std::vector<std::map<std::string, std::string>> result = db->fetchResults(query);
+
+        if (result.empty())
+        {
+            throw std::runtime_error("Role not found in BorrowingLimits table.");
+        }
+
+        return std::stoi(result[0]["borrowDuration"]);
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << RED << "Error retrieving borrow duration: " << e.what() << RESET << std::endl;
+        return 0; // Return 0 as a default/fallback value
+    }
 }

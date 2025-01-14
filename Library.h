@@ -1,6 +1,8 @@
 #ifndef LIBRARY_H
 #define LIBRARY_H
 
+#include "book.h"
+#include "user.h"
 #include "dbConnection.h"  // Assuming dbConnection is defined elsewhere
 #include <string>
 
@@ -16,10 +18,12 @@ public:
     std::string generateDueDate(int days);
     std::string generateLoanID(sql::Connection* conn);
     void changeMaxBookBorrow();
+    void changeBorrowingDuration();
     void settings();
+    void borrowBook(User user);
+    int getBorrowDuration(const std::string& userRole);
+    void checkBorrowLimit(const std::string& userID);
 private:
-    std::string loanID;
-    
 
     dbConnection* db;  // Pointer to the database connection
     

@@ -147,11 +147,11 @@ void Book::retrieveBookFromDB(std::string bookId)
     }
     try
     {
-        std::string query = "SELECT * FROM Book WHERE userID = ?";
+        std::string query = "SELECT * FROM Book WHERE bookID = ?";
 
         // Get the connection from dbConnection
         sql::PreparedStatement* pstmt = db->getConnection()->prepareStatement(query);
-        pstmt->setString(1, bookID);          // Bind name
+        pstmt->setString(1, bookId);          // Bind name
 
         sql::ResultSet* res = pstmt->executeQuery();
 
@@ -170,7 +170,8 @@ void Book::retrieveBookFromDB(std::string bookId)
             setPrice(res->getDouble("price"));
         }
         else {
-            std::cerr << "No user found with the provided userID." << std::endl;
+            std::cerr << "No book found with the provided Book ID." << std::endl;
+            system("pause");
         }
 
         // Clean up
@@ -180,6 +181,7 @@ void Book::retrieveBookFromDB(std::string bookId)
     catch (sql::SQLException& e)
     {
         std::cerr << "Error executing query: " << e.what() << std::endl;
+        system("pause");
     }
 }
 

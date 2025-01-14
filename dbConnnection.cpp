@@ -137,37 +137,64 @@ bool dbConnection::recordExists(const std::string& query) {
 
 std::vector<std::map<std::string, std::string>> dbConnection::fetchResults(const std::string& query)
 {
-    std::vector<std::map<std::string, std::string>> results; // To hold the results  
-    if (!con)
-    {
-        std::cerr << "No database connection available!" << std::endl;
-        return results; // Return empty results  
+    try {
+        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(query));
+        std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
+
+        std::vector<std::map<std::string, std::string>> result;
+
+        while (res->next()) {
+            std::map<std::string, std::string> row;
+            sql::ResultSetMetaData* meta = res->getMetaData();
+            int columnCount = meta->getColumnCount();
+
+            for (int i = 1; i <= columnCount; ++i) {
+                std::string columnName = meta->getColumnName(i);
+                std::string value = res->getString(i);
+                row[columnName] = value;
+            }
+
+            result.push_back(row);
+        }
+
+        return result;
     }
+    catch (const sql::SQLException& e) {
+        throw std::runtime_error("SQL Error: " + std::string(e.what()));
+        system("pause");
+    }
+    catch (const std::exception& e) {
+        throw std::runtime_error("Error: " + std::string(e.what()));
+        system("pause");
+    }
+}
+
+int dbConnection::getInt(const std::string& query, const std::vector<std::string>& params)
+{
     try
     {
-        std::unique_ptr<sql::Statement> stmt(con->createStatement());
-        std::unique_ptr<sql::ResultSet> res(stmt->executeQuery(query));
+        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(query));
 
-        // Get the metadata for column information  
-        sql::ResultSetMetaData* meta = res->getMetaData();
-        int columnCount = meta->getColumnCount();
-
-        // Process the result set  
-        while (res->next())
+        // Bind parameters to the prepared statement
+        for (size_t i = 0; i < params.size(); ++i)
         {
-            std::map<std::string, std::string> row;
-            for (int i = 1; i <= columnCount; ++i)
-            {
-                row[meta->getColumnLabel(i)] = res->getString(i);
-            }
-            results.push_back(row);
+            pstmt->setString(i + 1, params[i]);
+        }
+
+        // Execute the query
+        std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
+
+        // Retrieve and return the integer result
+        if (res->next())
+        {
+            return res->getInt(1); // Assuming the integer is the first column in the result set
         }
     }
     catch (sql::SQLException& e)
     {
-        std::cerr << RED << "Error executing query: " << query << std::endl;
-        std::cerr << "SQLException: " << e.what() << RESET << std::endl;
-        system("pause");
+        std::cerr << "SQL Error: " << e.what() << std::endl;
     }
-    return results; // Return the results  
+
+    // Return -1 or an appropriate error value if no result was found
+    return -1;
 }

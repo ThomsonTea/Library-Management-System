@@ -6,6 +6,8 @@
 #include <thread>
 #include <chrono>
 #include <string>
+#include <list>
+#include "book.h"
 #include "dbConnection.h"  // Include the dbConnection header
 
 class User
@@ -63,7 +65,6 @@ private:
     std::string address;
     std::string password;
     std::string role;
-
 
     dbConnection* db;
 };
