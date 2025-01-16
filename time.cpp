@@ -14,23 +14,32 @@ std::string getCurrentTime()
 }
 
 int getDueTime(const std::string& dueDateStr) {
+    // Get the current time as a string
     std::string currentTimeStr = getCurrentTime();
+
+    // Convert the current time to a tm structure
     struct tm currentTime = {};
     std::istringstream(currentTimeStr) >> std::get_time(&currentTime, "%Y-%m-%d %H:%M:%S");
 
+    // Convert the due date to a tm structure
     struct tm dueTime = {};
     std::istringstream(dueDateStr) >> std::get_time(&dueTime, "%Y-%m-%d %H:%M:%S");
 
+    // Convert both to time_t for comparison
     std::time_t current = std::mktime(&currentTime);
     std::time_t due = std::mktime(&dueTime);
 
-    double secondsRemaining = std::difftime(due, current);
-
-    if (secondsRemaining < 0) {
-        std::cout << "The due date has already passed.\n";
-        return -1;
+    // Check if the due date is after the current date
+    if (due > current) {
+        // Display error in red color
+        std::cout << "\033[31mError: Due date is after the current date.\033[0m" << std::endl;
+        return -1; // Invalid due date
     }
 
-    int daysRemaining = static_cast<int>(secondsRemaining / (60 * 60 * 24));
-    return daysRemaining;
+    // Calculate the difference in seconds
+    double secondsRemaining = std::difftime(current, due);
+
+    // Calculate and return the number of overdue days
+    int overdueDays = static_cast<int>(secondsRemaining / (60 * 60 * 24));
+    return overdueDays;
 }

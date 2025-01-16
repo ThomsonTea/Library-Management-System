@@ -415,6 +415,7 @@ void Fine::fineMenu(User user) {
     std::string loanID, bookStatus, bookID;
     std::string query;
     char confirmation;
+    int dueDays;
     Book book(db);
     std::vector<std::map<std::string, std::string>> result;
     struct FineRecord {
@@ -477,7 +478,7 @@ void Fine::fineMenu(User user) {
                 std::getline(std::cin, loanID);
 
                 // Query to check if the book is borrowed by the user and if it's in 'Overdue', 'Lost', or 'Damaged' status.
-                query = "SELECT loanID, userID, bookID, bookStatus FROM Loan WHERE loanID = '" + loanID + "' AND userID='" + user.getUserID() + "' AND bookStatus IN ('Overdue', 'Lost', 'Damaged') AND return_date IS NULL ORDER BY due_date ASC LIMIT 1";
+                query = "SELECT loanID, userID, bookID, bookStatus, due_date FROM Loan WHERE loanID = '" + loanID + "' AND userID='" + user.getUserID() + "' AND bookStatus IN ('Overdue', 'Lost', 'Damaged') AND return_date IS NULL ORDER BY due_date ASC LIMIT 1";
                 result = db->fetchResults(query);
 
                 if (result.empty()) {
@@ -504,7 +505,7 @@ void Fine::fineMenu(User user) {
                 loanID = result[0]["loanID"];
                 bookStatus = result[0]["bookStatus"];
 
-                std::cout << "\x1b[6;1H" << "Are you sure you want to change the status? (Y/N): ";
+                std::cout << "\x1b[6;1H" << YELLOW << "Are you sure you want to change the status? (Y/N): " << RESET;
                 confirmation = _getch();
                 if (confirmation == 'Y' || confirmation == 'y') {
                     // Proceed to change the status if confirmed
@@ -559,17 +560,21 @@ void Fine::fineMenu(User user) {
                     }
                 }
 
+                bookIdStr = result[0]["bookID"];
+                dueDateStr = result[0]["due_date"];
+                dueDays = getDueTime(dueDateStr);
+
+                // If the due date is invalid, skip adding to the vector
+                if (dueDays == -1) {
+                    std::cout << "Invalid due date for calculation. Fine not added to the total fines." << std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(2));
+                    break;
+                }
                 // Now insert the data into the struct and vector
                 newFineRecord.loanID = loanID;
-                bookIdStr = result[0]["bookID"];
                 newFineRecord.bookID = bookIdStr;
                 newFineRecord.bookStatus = bookStatus;
-
-                // Calculate dueDays using the due_date from the Loan table
-                dueDateStr = result[0]["due_date"];
-                newFineRecord.dueDays = getDueTime(dueDateStr);
-
-                // Set fine reason based on the book status
+                newFineRecord.dueDays = dueDays;
                 newFineRecord.fineReason = "Book is " + bookStatus;
 
                 // Add to totalFines vector
