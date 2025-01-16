@@ -31,7 +31,15 @@ public:
     std::string getPaymentDate() const;
     const std::string& getReason() const;
     const int getDueDay() const;
-    
+    struct FineRecord {
+        std::string loanID;
+        std::string bookID;
+        std::string bookTitle;
+        std::string bookPrice;
+        std::string bookStatus;
+        int dueDays;
+        std::string fineReason;
+    };
     
     void setLoanID(const std::string& id);
     void setFineID(const std::string& id);
@@ -44,6 +52,7 @@ public:
     void changeOverdueFineRate();
     void changeMaxOverdueFine();
     void changeDamageFinePercentage();
+    void doPayment(User user, std::vector<FineRecord>& totalFines);
     std::string generateFineID(sql::Connection* conn);
     const std::vector<Fine>& getFines() const;
     void clearFines();

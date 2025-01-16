@@ -32,10 +32,10 @@ void Library::inputUserData()
     std::vector<std::map<std::string, std::string>> roleResult;
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Clear the input buffer
     std::string userRole;
+
     do
     {
         system("cls");
-
 
         std::cout << CYAN << "Welcome to Library !\n" << RESET << std::endl;
         std::cout << "Borrowing:" << std::endl;
@@ -50,14 +50,15 @@ void Library::inputUserData()
             // Fetch user role  
             roleQuery = "SELECT role FROM User WHERE userID='" + user.getUserID() + "'";
             roleResult = db->fetchResults(roleQuery);
-            if (roleResult.empty()) {
+            if (roleResult.empty())
+            {
                 std::cout << RED << "Error: Unable to fetch user role!" << RESET << std::endl;
                 std::this_thread::sleep_for(std::chrono::seconds(2));
                 break;
             }
             userRole = roleResult[0]["role"];
 
-            displayUserQuery = 
+            displayUserQuery =
                 "SELECT b.bookID, b.title, b.author, l.borrow_date, l.due_date, l.bookStatus "
                 "FROM Loan l "
                 "JOIN Book b ON l.bookID = b.bookID "
@@ -69,7 +70,8 @@ void Library::inputUserData()
         }
 
         char c = _getch(); // Use _getch() to get key press without waiting for enter.
-        switch (c) {
+        switch (c)
+        {
         case KEY_UP:
             selected = (selected - 1 + 3) % 3; // Wrap around to the last option if at the top.
             break;
@@ -77,8 +79,9 @@ void Library::inputUserData()
             selected = (selected + 1) % 3; // Wrap around to the first option if at the bottom.
             break;
         case KEY_ENTER:
-            switch (selected) {
-            case 0:
+            switch (selected)
+            {
+            case 0: // Enter User ID
                 std::cout << "\x1b[4;13H";
                 getline(std::cin, userID);
 
@@ -91,20 +94,32 @@ void Library::inputUserData()
                     std::this_thread::sleep_for(std::chrono::seconds(2));
                     continue; // Allow re-entry of User ID  
                 }
-                
+
                 userSelected = true;
                 break;
-            case 1:
-                ModulesMenu(user);
+
+            case 1: // Confirm Selection
+                if (!userSelected) // Check if the user ID is entered and valid
+                {
+                    std::cout << RED << "\x1b[4;13H" << "Error: Please enter a valid User ID first!" << RESET << std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(2));
+                }
+                else
+                {
+                    ModulesMenu(user);
+                }
                 break;
-            case 2:
+
+            case 2: // Return Back
                 borrowing = false;
                 break;
+
             default:
                 std::cout << "\nInvalid Input, please try again..." << std::endl;
                 break;
             }
             break;
+
         case KEY_ESC:
             borrowing = false;
             break;
