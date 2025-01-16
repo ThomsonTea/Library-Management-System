@@ -35,12 +35,11 @@ int main() {
             std::cout << CYAN << "Welcome to Library Management System, " << BOLD << loggingUser.getName() << "!" << RESET << std::endl;
             std::cout << "\nModule: " << std::endl;
             std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "My Profile" << RESET << std::endl;
-            std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Borrowing" << RESET << std::endl;
-            std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "Returning" << RESET << std::endl;
-            std::cout << (selected == 3 ? "-> " : "   ") << (selected == 3 ? BG_YELLOW : "") << "Reporting" << RESET << std::endl;
-            std::cout << (selected == 4 ? "-> " : "   ") << (selected == 4 ? BG_YELLOW : "") << "Library" << RESET << std::endl;
-            std::cout << (selected == 5 ? "-> " : "   ") << (selected == 5 ? BG_YELLOW : "") << "User Management" << RESET << std::endl;
-            std::cout << (selected == 6 ? "-> " : "   ") << (selected == 6 ? BG_YELLOW : "") << "Settings" << RESET << std::endl;
+            std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Borrowing / Returning" << RESET << std::endl;
+            std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "Reporting" << RESET << std::endl;
+            std::cout << (selected == 3 ? "-> " : "   ") << (selected == 3 ? BG_YELLOW : "") << "Book Library Management" << RESET << std::endl;
+            std::cout << (selected == 4 ? "-> " : "   ") << (selected == 4 ? BG_YELLOW : "") << "User Management" << RESET << std::endl;
+            std::cout << (selected == 5 ? "-> " : "   ") << (selected == 5 ? BG_YELLOW : "") << "Settings" << RESET << std::endl;
 
             std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, or press Esc to quit.\n";
 
@@ -49,10 +48,10 @@ int main() {
             std::string exitpass;
             switch (c) {
             case KEY_UP:
-                selected = (selected - 1 + 7) % 7; // Wrap around to the last option if at the top.
+                selected = (selected - 1 + 6) % 6; // Wrap around to the last option if at the top.
                 break;
             case KEY_DOWN:
-                selected = (selected + 1) % 7; // Wrap around to the first option if at the bottom.
+                selected = (selected + 1) % 6; // Wrap around to the first option if at the bottom.
                 break;
             case KEY_ENTER:
                 switch (selected) {
@@ -60,21 +59,18 @@ int main() {
                     loggingUser.userProfile();
                     break;
                 case 1:
-                    library.borrowBookMenu();
+                    library.inputUserData();
                     break;
                 case 2:
-                    library.returnBookMenu();
-                    break;
-                case 3:
                     // Report
                     break;
-                case 4:
+                case 3:
                     book.libraryManagementMenu();
                     break;
-                case 5:
+                case 4:
                     loggingUser.userManagementMenu();
                     break;
-                case 6:
+                case 5:
                     library.settings();
                     break;
                 default:

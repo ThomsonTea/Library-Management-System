@@ -231,3 +231,4 @@ std::string dbConnection::getString(const std::string& query, const std::vector<
     // Return an empty string or an appropriate error value if no result was found
     return "";
 }
+

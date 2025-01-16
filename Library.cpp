@@ -8,13 +8,17 @@
 #include <chrono>
 #include <conio.h>
 #include "tc.h"
+#include "fine.h"
+#include "time.h"
+#include <tabulate/table.hpp>
+#include "table.h"
 // Constructor that takes a dbConnection pointer
 Library::Library(dbConnection* db) 
 {
     this->db = db; // Assuming you have a member variable db  
 }
 
-void Library::borrowBookMenu()
+void Library::inputUserData()
 {
     int selected = 0;  // Keeps track of which option is selected.
     bool borrowing = true;
@@ -54,10 +58,12 @@ void Library::borrowBookMenu()
             userRole = roleResult[0]["role"];
 
             displayUserQuery = 
-                "SELECT b.bookID, b.title, b.author, l.borrow_date, l.due_date, l.bookStatus "  
-                "FROM Loan l "  
-                "JOIN Book b ON l.bookID = b.bookID "  
-                "WHERE l.userID = '" + user.getUserID() + "' AND l.bookStatus = 'Borrowing'" ;
+                "SELECT b.bookID, b.title, b.author, l.borrow_date, l.due_date, l.bookStatus "
+                "FROM Loan l "
+                "JOIN Book b ON l.bookID = b.bookID "
+                "WHERE l.userID = '" + user.getUserID() + "' "
+                "AND l.bookStatus IN('Borrowing','Overdue') "
+                "AND l.return_date IS NULL";
 
             db->fetchAndDisplayData(displayUserQuery);
         }
@@ -75,6 +81,7 @@ void Library::borrowBookMenu()
             case 0:
                 std::cout << "\x1b[4;13H";
                 getline(std::cin, userID);
+
                 user.retrieveUserFromDB(userID);
                 // Validate User ID  
                 checkUserQuery = "SELECT * FROM User WHERE userID='" + user.getUserID() + "'";
@@ -88,7 +95,7 @@ void Library::borrowBookMenu()
                 userSelected = true;
                 break;
             case 1:
-                borrowBook(user);
+                ModulesMenu(user);
                 break;
             case 2:
                 borrowing = false;
@@ -148,39 +155,64 @@ void Library::borrowBook(User user)
             break;
         case KEY_ENTER:
             switch (selected) {
-            case 0:  // Enter Book ID  
+            case 0:  // Enter Book ID
                 std::cout << "\x1b[2;19H"; // Move cursor to the input position
                 std::getline(std::cin, bookID);
 
                 try {
-                    // Check book status and quantity  
+                    // Check if the user has any overdue books
+                    std::string overdueCheckQuery =
+                        "SELECT l.loanID, l.bookID, b.title, l.due_date "
+                        "FROM Loan l "
+                        "JOIN Book b ON l.bookID = b.bookID "
+                        "WHERE l.userID='" + user.getUserID() + "' AND l.bookStatus = 'Overdue' AND l.return_date IS NULL";
+
+                    auto overdueResult = db->fetchResults(overdueCheckQuery);
+
+                    if (!overdueResult.empty()) {
+                        std::cout << "\x1b[11;1H" << RED << "Error: You have overdue books and cannot borrow more!" << RESET << std::endl;
+                        std::cout << "Overdue Book Details:" << std::endl;
+
+                        tabulate::Table table;
+
+                        table.add_row({ "Loan ID", "Book ID", "Title", "Due Date" });
+                        for (const auto& overdueBook : overdueResult) {
+
+                            table.add_row({ overdueBook.at("loanID"), overdueBook.at("bookID"), overdueBook.at("title"), overdueBook.at("due_date")});
+                        }
+                        tableFormat(table);
+                        system("pause");
+                        break; // Exit case without proceeding further
+                    }
+
+                    // Check book status and quantity
                     checkBookQuery = "SELECT quantity, title, status FROM Book WHERE bookID='" + bookID + "'";
                     result = db->fetchResults(checkBookQuery);
 
                     if (result.empty()) {
                         std::cout << RED << "Error: Book does not exist!" << RESET << std::endl;
                         std::this_thread::sleep_for(std::chrono::seconds(2));
-                        continue; // Allow re-entry of Book ID  
+                        continue; // Allow re-entry of Book ID
                     }
 
-                    // Check status explicitly  
+                    // Check status explicitly
                     if (result[0]["status"] != "Available") {
                         std::cout << RED << "Error: Book is not available!" << RESET << std::endl;
                         std::this_thread::sleep_for(std::chrono::seconds(2));
                         continue;
                     }
 
-                    // Ensure quantity is checked correctly  
-                    quantity = std::stoi(result[0]["quantity"]); // Update the pre-declared quantity   
+                    // Ensure quantity is checked correctly
+                    quantity = std::stoi(result[0]["quantity"]); // Update the pre-declared quantity
                     if (quantity <= 0) {
                         std::cout << RED << "Error: Book is out of stock!" << RESET << std::endl;
                         std::this_thread::sleep_for(std::chrono::seconds(2));
-                        continue; // Allow re-entry of Book ID  
+                        continue; // Allow re-entry of Book ID
                     }
 
-                    // Retrieve book details  
+                    // Retrieve book details
                     book.retrieveBookFromDB(bookID);
-                    bookConfirmed = true;  // Book is valid  
+                    bookConfirmed = true;  // Book is valid
                 }
                 catch (const std::exception& e) {
                     std::cout << RED << "Error processing book: " << e.what() << RESET << std::endl;
@@ -189,7 +221,6 @@ void Library::borrowBook(User user)
                     break;
                 }
                 break;
-
             case 1:  // CONFIRM  
                 if (bookConfirmed && !book.getBookID().empty()) {
                     try {
@@ -207,11 +238,9 @@ void Library::borrowBook(User user)
                         std::vector<std::string> countBorrowingParams = { user.getUserID() };
                         int borrowedCount = db->getInt(checkCountBorrowingQuery, countBorrowingParams);
 
-                        std::string maxBorrowQuery = "SELECT maxBorrowable FROM BorrowingLimits WHERE role = ?";
+                        std::string maxBorrowQuery = "SELECT maxBorrowable FROM rolePrivelage WHERE role = ?";
                         std::vector<std::string> maxBorrowParams = { user.getRole() };
-                        std::cout << user.getRole() << std::endl;
                         int maxBorrowCount = db->getInt(maxBorrowQuery, maxBorrowParams);
-                        std::cout << borrowedCount << std::endl << maxBorrowCount;
                         // Assuming max borrow limit is 3 for this example  
                         if (borrowedCount >= maxBorrowCount) {
                             std::cout << RED << "Error: You have reached the maximum borrowing limit!" << RESET << std::endl;
@@ -226,7 +255,7 @@ void Library::borrowBook(User user)
                         int duration = getBorrowDuration(user.getRole());
 
                         // Generate dates  
-                        std::string borrowDate = generateCurrentDateTime();
+                        std::string borrowDate = getCurrentTime();
                         std::string dueDate = generateDueDate(duration);
 
                         // Insert into Loan table  
@@ -273,19 +302,6 @@ void Library::borrowBook(User user)
             break;
         }
     } while (borrowing);
-}
-
-
-std::string Library::generateCurrentDateTime()
-{
-    std::time_t now = std::time(nullptr);
-    struct tm tm_now;
-    localtime_s(&tm_now, &now);  // Convert time to local time  
-
-    // Format the current date and time as a string in SQL format  
-    std::ostringstream datetime_oss;
-    datetime_oss << std::put_time(&tm_now, "%Y-%m-%d %H:%M:%S");
-    return datetime_oss.str();  // Return the formatted datetime as string  
 }
 
 std::string Library::generateDueDate(int days)
@@ -363,12 +379,16 @@ void Library::settings()
     int selected = 0;  // Keeps track of which option is selected.
     bool selecting = true;
     Library library(db);
+    Fine fineManager(db);
     do {
         system("cls");
         std::cout << CYAN << "Welcome to Library Management System! " << RESET << std::endl;
         std::cout << "\Settings: " << std::endl;
         std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "Change Max Book Borrowed" << RESET << std::endl;
         std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Change Borrowing Duration" << RESET << std::endl;
+        std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "Change Overdue Fine Rate" << RESET << std::endl;
+        std::cout << (selected == 3 ? "-> " : "   ") << (selected == 3 ? BG_YELLOW : "") << "Change Max Overdue Fine" << RESET << std::endl;
+        std::cout << (selected == 4 ? "-> " : "   ") << (selected == 4 ? BG_YELLOW : "") << "Change Damage Fine Offer" << RESET << std::endl;
 
         std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, or press Esc to quit.\n";
 
@@ -377,10 +397,10 @@ void Library::settings()
         std::string exitpass;
         switch (c) {
         case KEY_UP:
-            selected = (selected - 1 + 2) % 2; // Wrap around to the last option if at the top.
+            selected = (selected - 1 + 5) % 5; // Wrap around to the last option if at the top.
             break;
         case KEY_DOWN:
-            selected = (selected + 1) % 2; // Wrap around to the first option if at the bottom.
+            selected = (selected + 1) % 5; // Wrap around to the first option if at the bottom.
             break;
         case KEY_ENTER:
             switch (selected) {
@@ -389,6 +409,15 @@ void Library::settings()
                 break;
             case 1:
                 library.changeBorrowingDuration();
+                break;
+            case 2:
+                fineManager.changeOverdueFineRate();
+                break;
+            case 3:
+                fineManager.changeMaxOverdueFine();
+                break;
+            case 4:
+                fineManager.changeDamageFinePercentage();
                 break;
             default:
                 std::cout << "\nInvalid Input, please try again..." << std::endl;
@@ -408,7 +437,7 @@ void Library::changeMaxBookBorrow() {
     int selected = 0;  // Keeps track of which option is selected.  
     bool selecting = true;
     std::string roleQuery = "SELECT role, MAX(maxBorrowable) AS maxBorrowable "
-        "FROM BorrowingLimits "
+        "FROM rolePrivelage "
         "GROUP BY role "
         "ORDER BY FIELD(role, 'User', 'Staff', 'Admin')";
 
@@ -466,13 +495,13 @@ void Library::changeMaxBookBorrow() {
             // Prepare the update query based on the selected role  
             switch (selected) {
             case 0:
-                updateQuery = "UPDATE BorrowingLimits SET maxBorrowable='" + data + "' WHERE role = 'User'";
+                updateQuery = "UPDATE rolePrivelage SET maxBorrowable='" + data + "' WHERE role = 'User'";
                 break;
             case 1:
-                updateQuery = "UPDATE BorrowingLimits SET maxBorrowable='" + data + "' WHERE role = 'Staff'";
+                updateQuery = "UPDATE rolePrivelage SET maxBorrowable='" + data + "' WHERE role = 'Staff'";
                 break;
             case 2:
-                updateQuery = "UPDATE BorrowingLimits SET maxBorrowable='" + data + "' WHERE role = 'Admin'";
+                updateQuery = "UPDATE rolePrivelage SET maxBorrowable='" + data + "' WHERE role = 'Admin'";
                 break;
             default:
                 std::cout << "Invalid Input, please try again..." << std::endl;
@@ -500,7 +529,7 @@ void Library::changeBorrowingDuration() {
     int selected = 0;  // Keeps track of which option is selected.  
     bool selecting = true;
     std::string durationQuery = "SELECT role, borrowDuration "
-        "FROM BorrowingLimits "
+        "FROM rolePrivelage "
         "ORDER BY FIELD(role, 'User', 'Staff', 'Admin')";
 
     std::string updateQuery;
@@ -557,13 +586,13 @@ void Library::changeBorrowingDuration() {
             // Prepare the update query based on the selected role  
             switch (selected) {
             case 0:
-                updateQuery = "UPDATE BorrowingLimits SET borrowDuration='" + data + "' WHERE role = 'User'";
+                updateQuery = "UPDATE rolePrivelage SET borrowDuration='" + data + "' WHERE role = 'User'";
                 break;
             case 1:
-                updateQuery = "UPDATE BorrowingLimits SET borrowDuration='" + data + "' WHERE role = 'Staff'";
+                updateQuery = "UPDATE rolePrivelage SET borrowDuration='" + data + "' WHERE role = 'Staff'";
                 break;
             case 2:
-                updateQuery = "UPDATE BorrowingLimits SET borrowDuration='" + data + "' WHERE role = 'Admin'";
+                updateQuery = "UPDATE rolePrivelage SET borrowDuration='" + data + "' WHERE role = 'Admin'";
                 break;
             default:
                 std::cout << "Invalid Input, please try again..." << std::endl;
@@ -591,12 +620,12 @@ int Library::getBorrowDuration(const std::string& userRole)
 {
     try
     {
-        std::string query = "SELECT borrowDuration FROM BorrowingLimits WHERE role='" + userRole + "'";
+        std::string query = "SELECT borrowDuration FROM rolePrivelage WHERE role='" + userRole + "'";
         std::vector<std::map<std::string, std::string>> result = db->fetchResults(query);
 
         if (result.empty())
         {
-            throw std::runtime_error("Role not found in BorrowingLimits table.");
+            throw std::runtime_error("Role not found in rolePrivelage table.");
         }
 
         return std::stoi(result[0]["borrowDuration"]);
@@ -606,97 +635,6 @@ int Library::getBorrowDuration(const std::string& userRole)
         std::cerr << RED << "Error retrieving borrow duration: " << e.what() << RESET << std::endl;
         return 0; // Return 0 as a default/fallback value
     }
-}
-
-void Library::returnBookMenu()
-{
-    int selected = 0;  // Keeps track of which option is selected.
-    bool borrowing = true;
-    std::string query;
-    std::string userID;
-    std::string displayUserQuery;
-    std::string roleQuery;
-    std::string checkUserQuery;
-    bool userSelected = false;
-    User user(db);
-    std::vector<std::map<std::string, std::string>> roleResult;
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Clear the input buffer
-    std::string userRole;
-    do
-    {
-        system("cls");
-
-
-        std::cout << CYAN << "Welcome to Library !\n" << RESET << std::endl;
-        std::cout << "Returning:" << std::endl;
-        std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "User ID: " << RESET << std::endl;
-        std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_GREEN : "") << "CONFIRM" << RESET << std::endl;
-        std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_RED : "") << "RETURN BACK" << RESET << std::endl;
-
-        std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select or press Esc to quit.\n";
-
-        if (userSelected)
-        {
-            // Fetch user role  
-            roleQuery = "SELECT role FROM User WHERE userID='" + user.getUserID() + "'";
-            roleResult = db->fetchResults(roleQuery);
-            if (roleResult.empty()) {
-                std::cout << RED << "Error: Unable to fetch user role!" << RESET << std::endl;
-                std::this_thread::sleep_for(std::chrono::seconds(2));
-                break;
-            }
-            userRole = roleResult[0]["role"];
-
-            displayUserQuery =
-                "SELECT b.bookID, b.title, b.author, l.borrow_date, l.due_date, l.bookStatus "
-                "FROM Loan l "
-                "JOIN Book b ON l.bookID = b.bookID "
-                "WHERE l.userID = '" + user.getUserID() + "' AND l.bookStatus = 'Borrowing'";
-
-            db->fetchAndDisplayData(displayUserQuery);
-        }
-
-        char c = _getch(); // Use _getch() to get key press without waiting for enter.
-        switch (c) {
-        case KEY_UP:
-            selected = (selected - 1 + 3) % 3; // Wrap around to the last option if at the top.
-            break;
-        case KEY_DOWN:
-            selected = (selected + 1) % 3; // Wrap around to the first option if at the bottom.
-            break;
-        case KEY_ENTER:
-            switch (selected) {
-            case 0:
-                std::cout << "\x1b[4;13H";
-                getline(std::cin, userID);
-                user.retrieveUserFromDB(userID);
-                // Validate User ID  
-                checkUserQuery = "SELECT * FROM User WHERE userID='" + user.getUserID() + "'";
-                if (!db->recordExists(checkUserQuery))
-                {
-                    std::cout << RED << "Error: User not found!" << RESET << std::endl;
-                    std::this_thread::sleep_for(std::chrono::seconds(2));
-                    continue; // Allow re-entry of User ID  
-                }
-
-                userSelected = true;
-                break;
-            case 1:
-                returnBook(user);
-                break;
-            case 2:
-                borrowing = false;
-                break;
-            default:
-                std::cout << "\nInvalid Input, please try again..." << std::endl;
-                break;
-            }
-            break;
-        case KEY_ESC:
-            borrowing = false;
-            break;
-        }
-    } while (borrowing);
 }
 
 void Library::returnBook(User user) {
@@ -728,7 +666,7 @@ void Library::returnBook(User user) {
                 "l.due_date "
                 "FROM Loan l "
                 "JOIN Book b ON l.bookID = b.bookID "
-                "WHERE userid ='" + user.getUserID() + "' ORDER BY due_date ASC LIMIT 1" ;
+                "WHERE userid ='" + user.getUserID() + "' AND l.bookStatus = 'Borrowing' AND l.return_date IS NULL ORDER BY due_date ASC LIMIT 1" ;
 
             db->fetchAndDisplayData(bookQuery);
         }
@@ -774,7 +712,7 @@ void Library::returnBook(User user) {
                         // Fetch the loanID and dueDate for the earliest book borrowed (the first one in the result set)
                         std::string loanID = result[0]["loanID"];  // Assuming `loanID` and `dueDate` are in the result map
                         std::string dueDate = result[0]["due_date"];
-                        std::string currentDate = generateCurrentDateTime();  // Get current date/time
+                        std::string currentDate = getCurrentTime();  // Get current date/time
 
                         // If the book is returned after due date, handle the logic for overdue if needed
 
@@ -820,13 +758,12 @@ void Library::returnBook(User user) {
     } while (borrowing);
 }
 
-
 void Library::updateOverdueStatus()
 {
     dbConnection* db = new dbConnection();
 
     // Get current date and time
-    std::string currentDatetime = generateCurrentDateTime(); // Use the getCurrentDatetime function
+    std::string currentDatetime = getCurrentTime(); // Use the getCurrentDatetime function
 
     std::string query = "SELECT loanID, userID, bookID, due_date FROM Loan WHERE bookStatus = 'Borrowing'";
     std::vector<std::map<std::string, std::string>> results = db->fetchResults(query);
@@ -846,4 +783,56 @@ void Library::updateOverdueStatus()
     }
 
     delete db;
+}
+
+void Library::ModulesMenu(User user)
+{
+    dbConnection* db = new dbConnection();
+    bool loggedIn = false;
+    int selected = 0;  // Keeps track of which option is selected.
+    bool selecting = true;
+    Library library(db);
+    Fine fineManager(db);
+    do {
+        system("cls");
+        std::cout << CYAN << "Welcome to Library Management System! " << RESET << std::endl;
+        std::cout << "\Settings: " << std::endl;
+        std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "Borrowing" << RESET << std::endl;
+        std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Returning" << RESET << std::endl;
+        std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "Apply Fine" << RESET << std::endl;
+
+        std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, or press Esc to quit.\n";
+
+        // Capture user input for navigation
+        char c = _getch(); // Use _getch() to get key press without waiting for enter.
+        std::string exitpass;
+        switch (c) {
+        case KEY_UP:
+            selected = (selected - 1 + 3) % 3; // Wrap around to the last option if at the top.
+            break;
+        case KEY_DOWN:
+            selected = (selected + 1) % 3; // Wrap around to the first option if at the bottom.
+            break;
+        case KEY_ENTER:
+            switch (selected) {
+            case 0:
+                library.borrowBook(user);
+                break;
+            case 1:
+                library.returnBook(user);
+                break;
+            case 2:
+                fineManager.fineMenu(user);
+                break;
+            default:
+                std::cout << "\nInvalid Input, please try again..." << std::endl;
+                break;
+            }
+            break;
+        case KEY_ESC:
+            selecting = false;
+            break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    } while (selecting);
 }

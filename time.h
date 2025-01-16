@@ -1,4 +1,5 @@
 #include <chrono>  
 #include <ctime> 
 
-std::string getCurrentDate();
+std::string getCurrentTime();
+int getDueTime(const std::string& dueDateStr);

@@ -13,9 +13,7 @@ public:
     Library(dbConnection* connection);
 
     // Method to borrow a book
-    void borrowBookMenu();
-    void returnBookMenu();
-    std::string generateCurrentDateTime();
+    void inputUserData();
     std::string generateDueDate(int days);
     std::string generateLoanID(sql::Connection* conn);
     void changeMaxBookBorrow();
@@ -25,6 +23,7 @@ public:
     void returnBook(User user);
     int getBorrowDuration(const std::string& userRole);
     void updateOverdueStatus();
+    void ModulesMenu(User user);
 
 private:
 

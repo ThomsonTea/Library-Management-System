@@ -134,6 +134,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="book.cpp" />
+    <ClCompile Include="Fine.cpp" />
     <ClCompile Include="Library.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="dbConnnection.cpp" />
@@ -145,6 +146,7 @@
   <ItemGroup>
     <ClInclude Include="book.h" />
     <ClInclude Include="dbConnection.h" />
+    <ClInclude Include="Fine.h" />
     <ClInclude Include="Library.h" />
     <ClInclude Include="table.h" />
     <ClInclude Include="tc.h" />

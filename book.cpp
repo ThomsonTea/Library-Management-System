@@ -14,6 +14,7 @@ Book::Book(dbConnection* connection)
     this->db = connection;
 }
 
+
 Book::Book(std::string bookID, std::string title, std::string isbn,
     std::string author, std::string publisher, std::string category, int publicationYear,
     int quantity, std::string status, double price)
@@ -181,7 +182,6 @@ void Book::retrieveBookFromDB(std::string bookId)
     catch (sql::SQLException& e)
     {
         std::cerr << "Error executing query: " << e.what() << std::endl;
-        system("pause");
     }
 }
 
