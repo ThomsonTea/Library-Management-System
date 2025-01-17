@@ -569,7 +569,7 @@ void Fine::fineMenu(User user) {
                 newFineRecord.dueDays = dueDays;
                 totalFines.push_back(newFineRecord);
 
-                std::cout << GREEN << "\x1b[2;19H" << "Fine added successfully!" << RESET << std::endl;
+                std::cout << GREEN << "\x1b[2;20H" << "Fine added successfully!" << RESET << std::endl;
                 std::this_thread::sleep_for(std::chrono::seconds(2));
                 break;
             case 1:  // Pay Selected Fines
@@ -652,7 +652,7 @@ void Fine::doPayment(User user, std::vector<FineRecord>& totalFines)
             else if (fine.bookStatus == "Damaged")
             {
                 fineAmount = std::stod(fine.bookPrice) * (damagedFinePercentage / 100);
-                calculation = "RM" + fine.bookPrice + " * " + std::to_string(damagedFinePercentage) + "%";
+                calculation = "RM" + fine.bookPrice + " * " + std::format("{:.2f}", damagedFinePercentage) + "%";
             }
             else if (fine.bookStatus == "Lost")
             {

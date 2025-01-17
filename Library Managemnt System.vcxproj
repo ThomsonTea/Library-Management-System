@@ -138,6 +138,8 @@
     <ClCompile Include="Library.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="dbConnnection.cpp" />
+    <ClCompile Include="Menu.cpp" />
+    <ClCompile Include="Report.cpp" />
     <ClCompile Include="table.cpp" />
     <ClCompile Include="time.cpp" />
     <ClCompile Include="user.cpp" />
@@ -148,6 +150,8 @@
     <ClInclude Include="dbConnection.h" />
     <ClInclude Include="Fine.h" />
     <ClInclude Include="Library.h" />
+    <ClInclude Include="Menu.h" />
+    <ClInclude Include="Report.h" />
     <ClInclude Include="table.h" />
     <ClInclude Include="tc.h" />
     <ClInclude Include="time.h" />

@@ -232,3 +232,38 @@ std::string dbConnection::getString(const std::string& query, const std::vector<
     return "";
 }
 
+int dbConnection::fetchSingleResult(const std::string& query)
+{
+    try
+    {
+        // Prepare and execute the SQL query
+        sql::Statement* stmt = con->createStatement();
+        sql::ResultSet* res = stmt->executeQuery(query);
+
+        // Check if a result is available
+        if (res->next())
+        {
+            int result = res->getInt(1); // Get the first column of the result
+            delete res;
+            delete stmt;
+            return result;
+        }
+        else
+        {
+            // No result found, return 0 or handle appropriately
+            delete res;
+            delete stmt;
+            return 0;
+        }
+    }
+    catch (const sql::SQLException& e)
+    {
+        std::cerr << "SQL Error: " << e.what() << "\n";
+        throw; // Re-throw the exception for further handling
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Error: " << e.what() << "\n";
+        throw; // Re-throw the exception for further handling
+    }
+}

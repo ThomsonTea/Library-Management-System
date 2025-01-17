@@ -10,6 +10,7 @@
 #include "table.h"
 #include "time.h"
 #include "tc.h"
+#include "validation.h"
 
 User::User(dbConnection* connection) : db(connection) {}
 
@@ -178,11 +179,6 @@ bool User::isUser(const std::string& userId, const std::string& password)
 
 void User::editProfile()
 {
-    if (!db->getConnection()) {  // Make sure db connection is available
-        std::cerr << "No database connection available!" << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        return;
-    }
     try
     {
         bool quitEditProfile = false;
@@ -368,60 +364,68 @@ void User::editProfile()
     }
 }
 
-void User::userProfile()
+void User::userProfile(User& user)
 {
     bool quitProfile = false;
-    do 
+    int selectedOption = 0;  // Default selection starts from the first option
+
+    do
     {
         system("cls");
-        int option = 0;
-        const int labelWidth = 20;   // Width for labels
-        const int valueWidth = 40;   // Width for values
-        std::cout << CYAN << "Welcome, " << YELLOW << getName() << CYAN << "!\n" << RESET << std::endl;
-        // Print each row of the table
-        std::cout << "+--------------------------------------------------------------+" << std::endl;
-        std::cout << "| " << std::left << std::setw(labelWidth) << "Name:"
-            << std::setw(valueWidth) << (getName() + " (" + getRole() + ")") << " |" << std::endl;
-        std::cout << "| " << std::left << std::setw(labelWidth) << "IC Number:"
-            << std::setw(valueWidth) << getIc() << " |" << std::endl;
-        std::cout << "| " << std::left << std::setw(labelWidth) << "Phone Number:"
-            << std::setw(valueWidth) << getPhoneNum() << " |" << std::endl;
-        std::cout << "| " << std::left << std::setw(labelWidth) << "Email:"
-            << std::setw(valueWidth) << getEmail() << " |" << std::endl;
-        std::cout << "| " << std::left << std::setw(labelWidth) << "Home Address:"
-            << std::setw(valueWidth) << getAddress() << " |" << std::endl;
+        std::cout << CYAN << "Welcome, " << YELLOW << user.getName() << CYAN << "!\n" << RESET << std::endl;
+        tabulate::Table table;
 
-        // Print table footer
-        std::cout << "+--------------------------------------------------------------+" << std::endl;
+        // Set the header for the table
+        table.add_row({ "Label", "Info" });
 
-        std::cout << "\nSettings:"
-            << "\n1. Edit Profile"
-            << "\n2. Change Password"
-            << "\n0. Return Back" << std::endl;
+        // Add rows with the label and the corresponding value
+        table.add_row({ "Name:", user.getName() + " (" + user.getRole() + ")" });
+        table.add_row({ "IC Number:", user.getIc() });
+        table.add_row({ "Phone Number:", user.getPhoneNum() });
+        table.add_row({ "Email:", user.getEmail() });
+        table.add_row({ "Home Address:", user.getAddress() });
 
-        std::cout << "\nGo To:";
-        std::cin >> option;
+        pivotTableFormat(table);
 
-        switch (option)
+        // Settings Menu with arrow key navigation
+        std::cout << "\nSettings:\n";
+        std::cout << (selectedOption == 0 ? "-> " : "   ") << (selectedOption == 0 ? BG_YELLOW : "") << "Edit Profile" << RESET << std::endl;
+        std::cout << (selectedOption == 1 ? "-> " : "   ") << (selectedOption == 1 ? BG_YELLOW : "") << "Change Password" << RESET << std::endl;
+        std::cout << (selectedOption == 2 ? "-> " : "   ") << (selectedOption == 2 ? BG_RED : "") << "Return Back" << RESET << std::endl;
+
+        std::cout << "\nUse arrow keys to navigate, press Enter to select, Esc to return to the main menu.\n";
+
+        // Wait for key press
+        char c = _getch();
+        switch (c)
         {
-        case 1:
-            editProfile();
+        case KEY_UP:
+            selectedOption = (selectedOption - 1 + 3) % 3;  // Wrap around navigation for 3 options
             break;
-        case 2:
-            changePassword();
+        case KEY_DOWN:
+            selectedOption = (selectedOption + 1) % 3;  // Wrap around navigation for 3 options
             break;
-        case 0:
-            quitProfile = true;
+        case KEY_ENTER:
+            switch (selectedOption)
+            {
+            case 0:
+                editProfile();  // Call the editProfile method
+                break;
+            case 1:
+                changePassword(user);  // Call the changePassword method
+                break;
+            case 2:
+                quitProfile = true;  // Exit to main menu
+                break;
+            }
             break;
-        default:
-            std::cout << "\nInvalid Input, please try again..." << std::endl;
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-            system("cls");
+        case KEY_ESC:
+            quitProfile = true;  // Exit to main menu on Esc key
             break;
         }
-    }while (!quitProfile);
-
+    } while (!quitProfile);
 }
+
 
 void User::retrieveUserFromDB(const std::string& userID)
 {
@@ -450,6 +454,7 @@ void User::retrieveUserFromDB(const std::string& userID)
             setEmail(res->getString("email"));
             setAddress(res->getString("address"));
             setRole(res->getString("role"));
+            setPassword(res->getString("password"));
         }
         else {
             std::cerr << "No user found with the provided userID." << std::endl;
@@ -465,7 +470,7 @@ void User::retrieveUserFromDB(const std::string& userID)
     }
 }
 
-void User::changePassword()
+void User::changePassword(User& user)
 {
     if (!db->getConnection()) {  // Make sure db connection is available
         std::cerr << "No database connection available!" << std::endl;
@@ -478,76 +483,102 @@ void User::changePassword()
         std::string oldPassword;
         std::string newPassword;
         std::string confirmPassword;
-        std::string msgEnterCurrPassword = "Enter your current password: ";
-        std::cout << msgEnterCurrPassword;
-        oldPassword = hiddenInput();
+        bool selecting = true;
+        int selected = 0; // Start at the "current password" field
 
-        while (oldPassword != getPassword())
+        // Use arrow keys to navigate between password fields
+        do
         {
-            std::cout << RED << "\t\tPassword is incorrect, pls try again" << RESET << std::endl;
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-            std::cout << "\x1b[A"; // Move the cursor up one line
-            std::cout << "\x1b[A"; // Move the cursor up one line
-            std::cout << "\x1b[" << msgEnterCurrPassword.length() << "C"; // Move the cursor to the msg characters to the right
-            std::cout << "\x1b[K"; // Clear from the cursor's position to the right of user input
-            oldPassword = hiddenInput();
-        }
-
-        std::string msgEnterNewPassword = "\nEnter your new password: ";
-        std::cout << msgEnterNewPassword;
-        newPassword = hiddenInput();
-        std::cout << "\nConfirm your new password: ";
-        confirmPassword = hiddenInput();
-
-        while (newPassword != confirmPassword)
-        {
-            std::cout << RED << "\t\tNew password and confirmed password is different, pls try again" << RESET << std::endl;
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-            std::cout << "\x1b[2;" << msgEnterNewPassword.length() << "H";
-            std::cout << "\x1b[K"; // Clear from the cursor's position to the right of user input
-            std::cout << "\x1b[0J"; // Clears from "\nEnter your new password: " to the end of the screen
-            newPassword = hiddenInput();
-            std::cout << "\nConfirm your new password: ";
-            confirmPassword = hiddenInput();
-        }
-
-        if (isUser(getUserID(), oldPassword))
-        {
-            std::string query = "UPDATE User SET password = ? WHERE userID = ? AND password = ?";
-            // Get the connection from dbConnection
-            sql::PreparedStatement* pstmt = db->getConnection()->prepareStatement(query);
-            pstmt->setString(1, newPassword);
-            pstmt->setString(2, getUserID());
-            pstmt->setString(3, oldPassword);
-
-            int rowsAffected = pstmt->executeUpdate();
-
-            if (rowsAffected > 0)
-            {
-                std::cout << GREEN << "\n\nPassword updated successfully for user with ID: " << CYAN << getUserID() << RESET << std::endl;
-                system("pause");
-            }
-            else
-            {
-                std::cout << RED << "\nWrong Password, pls check your password" << RESET << std::endl;
-                std::this_thread::sleep_for(std::chrono::seconds(2));
-            }
-            // Clean up
-            delete pstmt;
-        }
-        else
-        {
-            std::cout << RED << "\nWrong Password, pls check your password" << RESET << std::endl;
-            std::this_thread::sleep_for(std::chrono::seconds(2));
             system("cls");
-        }
-        
+            std::cout << "Change Password:\n\n";
+            std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "Current Password: " << RESET << (oldPassword.empty() ? "" : "[Hidden]") << std::endl;
+            std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "New Password: " << RESET << (newPassword.empty() ? "" : "[Hidden]") << std::endl;
+            std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "Confirm New Password: " << RESET << (confirmPassword.empty() ? "" : "[Hidden]") << std::endl;
+            std::cout << (selected == 3 ? "-> " : "   ") << (selected == 3 ? BG_GREEN : "") << "Save and Exit" << RESET << std::endl;
+            std::cout << (selected == 4 ? "-> " : "   ") << (selected == 4 ? BG_RED : "") << "Cancel" << RESET << std::endl;
+
+            std::cout << "\nUse arrow keys to navigate, press Enter to select, or press Esc to cancel.\n";
+
+            char c = _getch(); // Use _getch() to get key press without waiting for Enter.
+
+            switch (c) {
+            case KEY_UP:
+                selected = (selected - 1 + 5) % 5; // Wrap around to the last option if at the top.
+                break;
+            case KEY_DOWN:
+                selected = (selected + 1) % 5; // Wrap around to the first option if at the bottom.
+                break;
+            case KEY_ENTER:
+                switch (selected) {
+                case 0:
+                    std::cout << "\x1b[3;22H";
+                    oldPassword = hiddenInput(); // Input current password
+
+                    // Check if the entered old password matches the actual password in the database
+                    if (oldPassword != user.getPassword()) {
+                        std::cout << RED << "Current password is incorrect. Please try again." << RESET << std::endl;
+                        std::this_thread::sleep_for(std::chrono::seconds(2));
+                        oldPassword.clear(); // Clear the entered password to prompt the user to re-enter
+                        break;
+                    }
+                    break;
+                case 1:
+                    std::cout << "\x1b[4;18H";
+                    newPassword = hiddenInput(); // Input new password
+                    break;
+                case 2:
+                    std::cout << "\x1b[5;26H";
+                    confirmPassword = hiddenInput(); // Input confirm new password
+                    if (newPassword != confirmPassword) {
+                        std::cout << RED << "Passwords do not match. Please try again." << RESET << std::endl;
+                        std::this_thread::sleep_for(std::chrono::seconds(2));
+                        confirmPassword.clear(); // Clear the confirmation password to prompt the user to re-enter
+                    }
+                    break;
+                case 3:
+                    // Save and exit
+                    if (oldPassword == user.getPassword() && newPassword == confirmPassword) {
+                        std::string query = "UPDATE User SET password = ? WHERE userID = ? AND password = ?";
+                        sql::PreparedStatement* pstmt = db->getConnection()->prepareStatement(query);
+                        pstmt->setString(1, newPassword);
+                        pstmt->setString(2, user.getUserID());
+                        pstmt->setString(3, oldPassword);
+                        int rowsAffected = pstmt->executeUpdate();
+
+                        if (rowsAffected > 0)
+                        {
+                            std::cout << GREEN << "Password updated successfully." << RESET << std::endl;
+                        }
+                        else
+                        {
+                            std::cout << RED << "Error: Could not update password." << RESET << std::endl;
+                        }
+                        delete pstmt;
+                    }
+                    else {
+                        std::cout << RED << "Error: Current password is incorrect or passwords do not match." << RESET << std::endl;
+                    }
+                    std::this_thread::sleep_for(std::chrono::seconds(2));
+                    selecting = false;
+                    break;
+                case 4:
+                    selecting = false;
+                    break;
+                }
+                break;
+            case KEY_ESC:
+                selecting = false;  // Cancel operation
+                break;
+            }
+        } while(selecting);
     }
     catch (sql::SQLException& e)
     {
         std::cerr << "Error executing query: " << e.what() << std::endl;
     }
 }
+
+
 
 std::string User::hiddenInput()
 {
@@ -1024,21 +1055,20 @@ void User::editUser()
 
                 std::cout << "\nSelect the field to edit:\n";
                 std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "Name: " << RESET << std::endl;
-                std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "IC: " << RESET << std::endl;
-                std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "Phone Number: " << RESET << std::endl;
-                std::cout << (selected == 3 ? "-> " : "   ") << (selected == 3 ? BG_YELLOW : "") << "Email: " << RESET << std::endl;
-                std::cout << (selected == 4 ? "-> " : "   ") << (selected == 4 ? BG_YELLOW : "") << "Address: " << RESET << std::endl;
-                std::cout << (selected == 5 ? "-> " : "   ") << (selected == 5 ? BG_YELLOW : "") << "Password: " << RESET << std::endl;
-                std::cout << (selected == 6 ? "-> " : "   ") << (selected == 6 ? BG_GREEN : "") << "Save and Exit" << RESET << std::endl;
+                std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Phone Number: " << RESET << std::endl;
+                std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "Email: " << RESET << std::endl;
+                std::cout << (selected == 3 ? "-> " : "   ") << (selected == 3 ? BG_YELLOW : "") << "Address: " << RESET << std::endl;
+                std::cout << (selected == 4 ? "-> " : "   ") << (selected == 4 ? BG_YELLOW : "") << "Password: " << RESET << std::endl;
+                std::cout << (selected == 5 ? "-> " : "   ") << (selected == 5? BG_GREEN : "") << "Save and Exit" << RESET << std::endl;
 
                 char fieldInput = _getch();
                 switch (fieldInput)
                 {
                 case KEY_UP:
-                    selected = (selected - 1 + 7) % 7;
+                    selected = (selected - 1 + 6) % 6;
                     break;
                 case KEY_DOWN:
-                    selected = (selected + 1) % 7;
+                    selected = (selected + 1) % 6;
                     break;
                 case KEY_ENTER:
                     switch (selected)
@@ -1049,31 +1079,34 @@ void User::editUser()
                         user.setName(data);
                         break;
                     case 1:
-                        std::cout << "\x1b[21;8H";
-                        getline(std::cin, data);
-                        user.setIc(data);
-                        break;
-                    case 2:
                         std::cout << "\x1b[22;18H";
                         getline(std::cin, data);
                         user.setPhoneNum(data);
                         break;
-                    case 3:
+                    case 2:
                         std::cout << "\x1b[23;11H";
                         getline(std::cin, data);
-                        user.setEmail(data);
+                        if (checkEmail(data))
+                        {
+                            user.setEmail(data);
+
+                        }
+                        else
+                        {
+                            std::cerr << "\x1b[23;11H" << RED << "Invalid email format. Please try again." << RESET << std::endl;
+                        }
                         break;
-                    case 4:
+                    case 3:
                         std::cout << "\x1b[24;13H";
                         getline(std::cin, data);
                         user.setAddress(data);
                         break;
-                    case 5:
+                    case 4:
                         std::cout << "\x1b[25;14H";
                         getline(std::cin, data);
                         user.setPassword(data);
                         break;
-                    case 6:
+                    case 5:
                         query = "UPDATE User SET "
                             "name = '" + user.getName() + "', "
                             "ic = '" + user.getIc() + "', "
@@ -1169,6 +1202,16 @@ void User::registerUser()
                 case 1:
                     std::cout << "\x1b[20;8H";
                     std::getline(std::cin, data);
+                    if (!checkICFormat(data))
+                    {
+                        std::cerr << "\x1b[20;8H" << RED << "Invalid IC format. Please try again." << RESET << std::endl;
+                    }
+                        
+                    if (!newUser.isICUnique(data))
+                    {
+                        std::cerr << "This IC is already registered. Please enter a different IC." << std::endl;
+                        continue;
+                    }
                     newUser.setIc(data);
                     break;
                 case 2:
@@ -1179,7 +1222,15 @@ void User::registerUser()
                 case 3:
                     std::cout << "\x1b[22;11H";
                     std::getline(std::cin, data);
-                    newUser.setEmail(data);
+                    if (checkEmail(data))
+                    {
+                        newUser.setEmail(data);
+
+                    }
+                    else
+                    {
+                        std::cerr << "\x1b[21;18H" << RED << "Invalid email format. Please try again." << RESET << std::endl;
+                    }
                     break;
                 case 4:
                     std::cout << "\x1b[23;13H";
@@ -1295,4 +1346,12 @@ void User::registerUser()
         std::cerr << "Error executing insert query: " << e.what() << std::endl;
         system("pause");
     }
+}
+
+
+bool User::isICUnique(const std::string& ic)
+{
+    std::string query = "SELECT COUNT(*) FROM Users WHERE IC = '" + ic + "';";
+    int count = db->fetchSingleResult(query);
+    return count == 0;
 }

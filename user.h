@@ -47,14 +47,16 @@ public:
     bool isUser(const std::string& userId, const std::string& password);
     void registerUser();
     void editProfile();
-    void userProfile();
+    void userProfile(User& user);
     void retrieveUserFromDB(const std::string& userID);
-    void changePassword();
+    void changePassword(User& user);
     void userManagementMenu();
     void deleteUser();
     void searchUser();
     void editUser();
     std::string hiddenInput();
+    bool isICUnique(const std::string& ic);
+
 
 private:
     std::string userID;

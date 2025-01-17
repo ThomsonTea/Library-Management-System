@@ -189,7 +189,15 @@ void Book::searchBook()
 {
     int selected = 0;  // Keeps track of which option is selected.
     bool selecting = true;
-    std::string query = "SELECT bookID, isbn, title, author, publisher, category, publicationYear, quantity, price, status FROM Book LIMIT 10";
+    std::string query =
+        "SELECT B.bookID, B.isbn, B.title, B.author, B.publisher, B.category, B.publicationYear, "
+        "B.quantity, B.price, B.status, COUNT(L.bookID) AS borrow_count"
+        "FROM Book B"
+        "JOIN Loan L ON B.bookID = L.bookID"
+        "WHERE L.return_date IS NOT NULL  -- Ensure the book is returned(borrowed and returned)"
+        "GROUP BY B.bookID"
+        "ORDER BY borrow_count DESC"
+        "LIMIT 1";
 
     do
     {
@@ -992,4 +1000,3 @@ void Book::removeBook()
         }
     }while (selecting);  // End of loop
 }
-

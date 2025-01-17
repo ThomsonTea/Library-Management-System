@@ -47,8 +47,6 @@ void Library::inputUserData()
 
         if (userSelected)
         {
-            std::cout << "\nUser ID: " << CYAN << user.getUserID() << RESET <<"\n";
-            std::cout << "Username: " << CYAN << user.getName() << RESET << "\n\n";
             std::cout << BLACK << BG_WHITE << "Borrowing Book Status:" << RESET << "\n";
             roleQuery = "SELECT role FROM User WHERE userID='" + user.getUserID() + "'";
             roleResult = db->fetchResults(roleQuery);

@@ -1,104 +1,52 @@
-#include <iostream>
-#include <conio.h>
-#include <thread>
-#include <stdlib.h>
-#include "dbConnection.h"
-#include "user.h"
-#include "book.h"
-#include "tc.h"
+#include "User.h"
+#include "Menu.h"
 #include "Library.h"
+#include "dbConnection.h"
+#include <iostream>
+#include "Menu.h"
 
-int main() {
+int main()
+{
     dbConnection* db = new dbConnection();
     User loggingUser(db);
-    Book book(db);
     Library library(db);
-    std::string userID, password;
-    bool loggedIn = false;
-    int selected = 0;  // Keeps track of which option is selected.
-    bool selecting = true;
 
-
-    while (true) {
+    // Loop for the entire system to allow re-login after logout.
+    while (true)
+    {
         library.updateOverdueStatus();
-        // User login verification (you can define userVerify logic in the User class)
-        while (!loggedIn) {
-            if (loggingUser.userVerify()) {
-                loggedIn = true;
-            }
+        // Login process
+        if (!loggingUser.userVerify())
+        {
+            std::cout << "Login failed. Exiting system." << std::endl;
+            break;
         }
 
-        // Main menu loop
-        do {
+        // Retrieve user information from the database after successful login.
+        loggingUser.retrieveUserFromDB(loggingUser.getUserID());
 
-            system("cls");
-            std::cout << CYAN << "Welcome to Library Management System, " << BOLD << loggingUser.getName() << "!" << RESET << std::endl;
-            std::cout << "\nModule: " << std::endl;
-            std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "My Profile" << RESET << std::endl;
-            std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Borrowing / Returning" << RESET << std::endl;
-            std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "Reporting" << RESET << std::endl;
-            std::cout << (selected == 3 ? "-> " : "   ") << (selected == 3 ? BG_YELLOW : "") << "Book Library Management" << RESET << std::endl;
-            std::cout << (selected == 4 ? "-> " : "   ") << (selected == 4 ? BG_YELLOW : "") << "User Management" << RESET << std::endl;
-            std::cout << (selected == 5 ? "-> " : "   ") << (selected == 5 ? BG_YELLOW : "") << "Settings" << RESET << std::endl;
+        // Determine user role and redirect to the appropriate menu.
+        std::string userRole = loggingUser.getRole(); // Assumes `getRole()` returns the role as a string.
 
-            std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, or press Esc to quit.\n";
-
-            // Capture user input for navigation
-            char c = _getch(); // Use _getch() to get key press without waiting for enter.
-            std::string exitpass;
-            switch (c) {
-            case KEY_UP:
-                selected = (selected - 1 + 6) % 6; // Wrap around to the last option if at the top.
-                break;
-            case KEY_DOWN:
-                selected = (selected + 1) % 6; // Wrap around to the first option if at the bottom.
-                break;
-            case KEY_ENTER:
-                switch (selected) {
-                case 0:
-                    loggingUser.userProfile();
-                    break;
-                case 1:
-                    library.inputUserData();
-                    break;
-                case 2:
-                    // Report
-                    break;
-                case 3:
-                    book.libraryManagementMenu();
-                    break;
-                case 4:
-                    loggingUser.userManagementMenu();
-                    break;
-                case 5:
-                    library.settings();
-                    break;
-                default:
-                    std::cout << "\nInvalid Input, please try again..." << std::endl;
-                    break;
-                }
-                break;
-                case KEY_ESC:
-                std::cout << "\n\nARE YOU SURE?\n" << "PLEASE TYPE \"YES\" TO LOG OUT:\n";
-                std::cin >> exitpass;
-
-                if (exitpass == "YES") 
-                {
-                    std::cout << "\nLogging out..." << std::endl;
-                    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-                    system("cls");
-                    std::cout << "Thank you for using the Library System!" << std::endl;
-                    std::this_thread::sleep_for(std::chrono::seconds(1));
-
-                    loggedIn = false;
-                    selecting = false;
-                }
-                break;
-            }
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        } while (selecting);
+        if (userRole == "Admin")
+        {
+            adminMenu(loggingUser); // Call the admin menu.
+        }
+        else if (userRole == "Staff")
+        {
+            staffMenu(loggingUser); // Call the staff menu.
+        }
+        else if (userRole == "User")
+        {
+            userMenu(loggingUser); // Call the user menu.
+        }
+        else
+        {
+            std::cerr << "Error: Invalid user role detected. Exiting system." << std::endl;
+            break;
+        }
     }
 
+    delete db; // Clean up the database connection before exiting.
     return 0;
 }
