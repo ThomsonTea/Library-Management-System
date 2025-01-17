@@ -47,7 +47,9 @@ void Library::inputUserData()
 
         if (userSelected)
         {
-            // Fetch user role  
+            std::cout << "\nUser ID: " << CYAN << user.getUserID() << RESET <<"\n";
+            std::cout << "Username: " << CYAN << user.getName() << RESET << "\n\n";
+            std::cout << BLACK << BG_WHITE << "Borrowing Book Status:" << RESET << "\n";
             roleQuery = "SELECT role FROM User WHERE userID='" + user.getUserID() + "'";
             roleResult = db->fetchResults(roleQuery);
             if (roleResult.empty())
@@ -94,7 +96,6 @@ void Library::inputUserData()
                     std::this_thread::sleep_for(std::chrono::seconds(2));
                     continue; // Allow re-entry of User ID  
                 }
-
                 userSelected = true;
                 break;
 
@@ -253,7 +254,7 @@ void Library::borrowBook(User user)
                         std::vector<std::string> countBorrowingParams = { user.getUserID() };
                         int borrowedCount = db->getInt(checkCountBorrowingQuery, countBorrowingParams);
 
-                        std::string maxBorrowQuery = "SELECT maxBorrowable FROM rolePrivelage WHERE role = ?";
+                        std::string maxBorrowQuery = "SELECT maxBorrowable FROM rolePrivilege WHERE role = ?";
                         std::vector<std::string> maxBorrowParams = { user.getRole() };
                         int maxBorrowCount = db->getInt(maxBorrowQuery, maxBorrowParams);
                         // Assuming max borrow limit is 3 for this example  
@@ -432,7 +433,7 @@ void Library::settings()
                 fineManager.changeMaxOverdueFine();
                 break;
             case 4:
-                fineManager.changeDamageFinePercentage();
+                fineManager.changedamagedFinePercentage();
                 break;
             default:
                 std::cout << "\nInvalid Input, please try again..." << std::endl;
@@ -452,7 +453,7 @@ void Library::changeMaxBookBorrow() {
     int selected = 0;  // Keeps track of which option is selected.  
     bool selecting = true;
     std::string roleQuery = "SELECT role, MAX(maxBorrowable) AS maxBorrowable "
-        "FROM rolePrivelage "
+        "FROM rolePrivilege "
         "GROUP BY role "
         "ORDER BY FIELD(role, 'User', 'Staff', 'Admin')";
 
@@ -510,13 +511,13 @@ void Library::changeMaxBookBorrow() {
             // Prepare the update query based on the selected role  
             switch (selected) {
             case 0:
-                updateQuery = "UPDATE rolePrivelage SET maxBorrowable='" + data + "' WHERE role = 'User'";
+                updateQuery = "UPDATE rolePrivilege SET maxBorrowable='" + data + "' WHERE role = 'User'";
                 break;
             case 1:
-                updateQuery = "UPDATE rolePrivelage SET maxBorrowable='" + data + "' WHERE role = 'Staff'";
+                updateQuery = "UPDATE rolePrivilege SET maxBorrowable='" + data + "' WHERE role = 'Staff'";
                 break;
             case 2:
-                updateQuery = "UPDATE rolePrivelage SET maxBorrowable='" + data + "' WHERE role = 'Admin'";
+                updateQuery = "UPDATE rolePrivilege SET maxBorrowable='" + data + "' WHERE role = 'Admin'";
                 break;
             default:
                 std::cout << "Invalid Input, please try again..." << std::endl;
@@ -544,7 +545,7 @@ void Library::changeBorrowingDuration() {
     int selected = 0;  // Keeps track of which option is selected.  
     bool selecting = true;
     std::string durationQuery = "SELECT role, borrowDuration "
-        "FROM rolePrivelage "
+        "FROM rolePrivilege "
         "ORDER BY FIELD(role, 'User', 'Staff', 'Admin')";
 
     std::string updateQuery;
@@ -601,13 +602,13 @@ void Library::changeBorrowingDuration() {
             // Prepare the update query based on the selected role  
             switch (selected) {
             case 0:
-                updateQuery = "UPDATE rolePrivelage SET borrowDuration='" + data + "' WHERE role = 'User'";
+                updateQuery = "UPDATE rolePrivilege SET borrowDuration='" + data + "' WHERE role = 'User'";
                 break;
             case 1:
-                updateQuery = "UPDATE rolePrivelage SET borrowDuration='" + data + "' WHERE role = 'Staff'";
+                updateQuery = "UPDATE rolePrivilege SET borrowDuration='" + data + "' WHERE role = 'Staff'";
                 break;
             case 2:
-                updateQuery = "UPDATE rolePrivelage SET borrowDuration='" + data + "' WHERE role = 'Admin'";
+                updateQuery = "UPDATE rolePrivilege SET borrowDuration='" + data + "' WHERE role = 'Admin'";
                 break;
             default:
                 std::cout << "Invalid Input, please try again..." << std::endl;
@@ -635,12 +636,12 @@ int Library::getBorrowDuration(const std::string& userRole)
 {
     try
     {
-        std::string query = "SELECT borrowDuration FROM rolePrivelage WHERE role='" + userRole + "'";
+        std::string query = "SELECT borrowDuration FROM rolePrivilege WHERE role='" + userRole + "'";
         std::vector<std::map<std::string, std::string>> result = db->fetchResults(query);
 
         if (result.empty())
         {
-            throw std::runtime_error("Role not found in rolePrivelage table.");
+            throw std::runtime_error("Role not found in rolePrivilege table.");
         }
 
         return std::stoi(result[0]["borrowDuration"]);
@@ -706,7 +707,8 @@ void Library::returnBook(User user) {
                     result = db->fetchResults(checkLoanQuery);
 
                     if (result.empty()) {
-                        std::cout << "Error: The book is not currently borrowed or doesn't exist!" << std::endl;
+                        std::cout << RED << "Error: The book is not currently borrowed or doesn't exist!" << RESET << std::endl;
+                        std::this_thread::sleep_for(std::chrono::seconds(2));
                         return;  // Exit the function if the book is not borrowed
                     }
 

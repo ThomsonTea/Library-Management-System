@@ -51,7 +51,7 @@ public:
     void fineMenu(User user);
     void changeOverdueFineRate();
     void changeMaxOverdueFine();
-    void changeDamageFinePercentage();
+    void changedamagedFinePercentage();
     void doPayment(User user, std::vector<FineRecord>& totalFines);
     std::string generateFineID(sql::Connection* conn);
     const std::vector<Fine>& getFines() const;

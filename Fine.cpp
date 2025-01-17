@@ -89,7 +89,7 @@ void Fine::changeOverdueFineRate()
     int selected = 0;
     bool selecting = true;
     std::string fineRateQuery = "SELECT role, overdueFineRate "
-        "FROM rolePrivelage "
+        "FROM rolePrivilege "
         "ORDER BY FIELD(role, 'User', 'Staff', 'Admin')";
 
     std::string updateQuery;
@@ -141,13 +141,13 @@ void Fine::changeOverdueFineRate()
             // Prepare the update query based on the selected role
             switch (selected) {
             case 0:
-                updateQuery = "UPDATE rolePrivelage SET overdueFineRate='" + data + "' WHERE role = 'User'";
+                updateQuery = "UPDATE rolePrivilege SET overdueFineRate='" + data + "' WHERE role = 'User'";
                 break;
             case 1:
-                updateQuery = "UPDATE rolePrivelage SET overdueFineRate='" + data + "' WHERE role = 'Staff'";
+                updateQuery = "UPDATE rolePrivilege SET overdueFineRate='" + data + "' WHERE role = 'Staff'";
                 break;
             case 2:
-                updateQuery = "UPDATE rolePrivelage SET overdueFineRate='" + data + "' WHERE role = 'Admin'";
+                updateQuery = "UPDATE rolePrivilege SET overdueFineRate='" + data + "' WHERE role = 'Admin'";
                 break;
             default:
                 std::cout << "Invalid Input, please try again..." << std::endl;
@@ -175,7 +175,7 @@ void Fine::changeMaxOverdueFine() {
     int selected = 0;
     bool selecting = true;
     std::string maxFineQuery = "SELECT role, maxOverdueFine "
-        "FROM rolePrivelage "
+        "FROM rolePrivilege "
         "ORDER BY FIELD(role, 'User', 'Staff', 'Admin')";
 
     std::string updateQuery;
@@ -227,13 +227,13 @@ void Fine::changeMaxOverdueFine() {
             // Prepare the update query based on the selected role
             switch (selected) {
             case 0:
-                updateQuery = "UPDATE rolePrivelage SET maxOverdueFine='" + data + "' WHERE role = 'User'";
+                updateQuery = "UPDATE rolePrivilege SET maxOverdueFine='" + data + "' WHERE role = 'User'";
                 break;
             case 1:
-                updateQuery = "UPDATE rolePrivelage SET maxOverdueFine='" + data + "' WHERE role = 'Staff'";
+                updateQuery = "UPDATE rolePrivilege SET maxOverdueFine='" + data + "' WHERE role = 'Staff'";
                 break;
             case 2:
-                updateQuery = "UPDATE rolePrivelage SET maxOverdueFine='" + data + "' WHERE role = 'Admin'";
+                updateQuery = "UPDATE rolePrivilege SET maxOverdueFine='" + data + "' WHERE role = 'Admin'";
                 break;
             default:
                 std::cout << "Invalid Input, please try again..." << std::endl;
@@ -256,13 +256,13 @@ void Fine::changeMaxOverdueFine() {
     delete db;
 }
 
-void Fine::changeDamageFinePercentage()
+void Fine::changedamagedFinePercentage()
 {
     dbConnection* db = new dbConnection();
     int selected = 0;
     bool selecting = true;
-    std::string damageFineQuery = "SELECT role, damageFinePercentage "
-        "FROM rolePrivelage "
+    std::string damageFineQuery = "SELECT role, damagedFinePercentage "
+        "FROM rolePrivilege "
         "ORDER BY FIELD(role, 'User', 'Staff', 'Admin')";
 
     std::string updateQuery;
@@ -314,13 +314,13 @@ void Fine::changeDamageFinePercentage()
             // Prepare the update query based on the selected role
             switch (selected) {
             case 0:
-                updateQuery = "UPDATE rolePrivelage SET damageFinePercentage='" + data + "' WHERE role = 'User'";
+                updateQuery = "UPDATE rolePrivilege SET damagedFinePercentage='" + data + "' WHERE role = 'User'";
                 break;
             case 1:
-                updateQuery = "UPDATE rolePrivelage SET damageFinePercentage='" + data + "' WHERE role = 'Staff'";
+                updateQuery = "UPDATE rolePrivilege SET damagedFinePercentage='" + data + "' WHERE role = 'Staff'";
                 break;
             case 2:
-                updateQuery = "UPDATE rolePrivelage SET damageFinePercentage='" + data + "' WHERE role = 'Admin'";
+                updateQuery = "UPDATE rolePrivilege SET damagedFinePercentage='" + data + "' WHERE role = 'Admin'";
                 break;
             default:
                 std::cout << "Invalid Input, please try again..." << std::endl;
@@ -475,6 +475,7 @@ void Fine::fineMenu(User user) {
                     "WHERE l.loanID = '" + loanID + "' "
                     "AND l.userID = '" + user.getUserID() + "' "
                     "AND l.bookStatus IN ('Borrowing', 'Overdue', 'Lost', 'Damaged') "
+                    "AND l.return_date IS NUll "
                     "ORDER BY l.due_date ASC LIMIT 1";
 
                 result = db->fetchResults(query);
@@ -495,7 +496,7 @@ void Fine::fineMenu(User user) {
 
                 // Handle status updates for 'Damaged' or 'Lost'
                 if (bookStatus == "Borrowing" || bookStatus == "Overdue") {
-                    std::cout << YELLOW << "Do you want to update the status of this book to 'Damaged' or 'Lost'? (Y/N): " << RESET;
+                    std::cout << YELLOW << "\x1b[6;1H" << "Do you want to update the status of this book to 'Damaged' or 'Lost'? (Y/N): " << RESET;
                     confirmation = _getch();
                     if (confirmation == 'Y' || confirmation == 'y') {
                         bool statusSelecting = true;
@@ -568,11 +569,12 @@ void Fine::fineMenu(User user) {
                 newFineRecord.dueDays = dueDays;
                 totalFines.push_back(newFineRecord);
 
-                std::cout << GREEN << "Fine added successfully!" << RESET << std::endl;
+                std::cout << GREEN << "\x1b[2;19H" << "Fine added successfully!" << RESET << std::endl;
                 std::this_thread::sleep_for(std::chrono::seconds(2));
                 break;
             case 1:  // Pay Selected Fines
-                //doPayment(user, totalFines);
+                doPayment(user, totalFines);
+                selecting = false;
                 break;
             case 2:  // Return to Main Menu
                 selecting = false;
@@ -594,110 +596,132 @@ void Fine::fineMenu(User user) {
 void Fine::doPayment(User user, std::vector<FineRecord>& totalFines)
 {
     dbConnection* db = new dbConnection();
-
-    // Query to get the role and username of the user
-    std::string userQuery = "SELECT name, role FROM User WHERE userID = '" + user.getUserID() + "'";
-    std::vector<std::map<std::string, std::string>> userResult = db->fetchResults(userQuery);
-
-    if (userResult.empty())
+    system("cls");
+    try
     {
-        std::cout << "Error: User information not found!" << std::endl;
-        delete db;
-        return;
-    }
-
-    std::string username = userResult[0]["name"];
-    std::string userRole = userResult[0]["role"];
-
-    // Query to get role-specific privileges (fine rates, max overdue fine, damaged fine percentage)
-    std::string privilegesQuery = "SELECT overdueFineRate, maxOverdueFine, damagedFinePercentage "
-        "FROM RolePrivileges WHERE role = '" + userRole + "'";
-
-    std::vector<std::map<std::string, std::string>> privilegesResult = db->fetchResults(privilegesQuery);
-
-    if (privilegesResult.empty())
-    {
-        std::cout << "Error: Role privileges not found!" << std::endl;
-        delete db;
-        return;
-    }
-
-    // Extract values from the result
-    double overdueFineRate = std::stod(privilegesResult[0]["overdueFineRate"]);
-    double maxOverdueFine = std::stod(privilegesResult[0]["maxOverdueFine"]);
-    double damagedFinePercentage = std::stod(privilegesResult[0]["damagedFinePercentage"]);
-
-    // Display the receipt header
-    std::cout << "\n================= Payment Receipt =================\n";
-    std::cout << "User ID: " << user.getUserID() << "\n";
-    std::cout << "Username: " << username << "\n";
-    std::cout << "Role: " << userRole << "\n";
-    std::cout << "==================================================\n";
-
-    // Display fine details in a table format
-    tabulate::Table receiptTable;
-    receiptTable.add_row({ "Loan ID", "Book ID", "Book Title", "Book Price", "Status", "Calculation", "Fine Amount" });
-
-    double totalAmount = 0.0; // Total fine amount
-
-    // Loop through totalFines vector to process each fine
-    for (auto& fine : totalFines)
-    {
-        double fineAmount = 0.0;
-        std::string calculation;
-
-        if (fine.bookStatus == "Overdue")
+        // Check if the user exists
+        std::string userCheckQuery = "SELECT 1 FROM User WHERE userID = '" + user.getUserID() + "'";
+        if (!db->recordExists(userCheckQuery))
         {
-            fineAmount = fine.dueDays * overdueFineRate;
-            if (fineAmount > maxOverdueFine)
+            throw std::runtime_error("Error: User information not found!");
+        }
+
+        // Fetch user's name and role
+        std::string userQuery = "SELECT name, role FROM User WHERE userID = '" + user.getUserID() + "'";
+        std::vector<std::map<std::string, std::string>> userResult = db->fetchResults(userQuery);
+        std::string username = userResult[0]["name"];
+        std::string userRole = userResult[0]["role"];
+
+        // Fetch role-specific privileges
+        std::string privilegesQuery = "SELECT overdueFineRate, maxOverdueFine, damagedFinePercentage "
+            "FROM rolePrivilege WHERE role = '" + userRole + "'";
+        if (!db->recordExists("SELECT 1 FROM rolePrivilege WHERE role = '" + userRole + "'"))
+        {
+            throw std::runtime_error("Error: Role privileges not found!");
+        }
+        std::vector<std::map<std::string, std::string>> privilegesResult = db->fetchResults(privilegesQuery);
+
+        double overdueFineRate = std::stod(privilegesResult[0]["overdueFineRate"]);
+        double maxOverdueFine = std::stod(privilegesResult[0]["maxOverdueFine"]);
+        double damagedFinePercentage = std::stod(privilegesResult[0]["damagedFinePercentage"]);
+        std::string currentDateTime = getCurrentTime();
+
+        // Prepare receipt
+        std::cout << "\n================= Payment Receipt =================\n";
+        std::cout << "User ID: " << user.getUserID() << "\n";
+        std::cout << "Username: " << user.getName() << "\n";
+        std::cout << "Role: " << user.getRole() << "\n";
+        std::cout << "Payment Date (YYYY-MM-DD HH/MM/SS): " << currentDateTime << "\n";
+        std::cout << "==================================================\n";
+
+        tabulate::Table receiptTable;
+        receiptTable.add_row({ "Loan ID", "Book ID", "Book Title", "Book Price", "Status", "Calculation", "Fine Amount" });
+
+        double totalAmount = 0.0;
+
+        for (const auto& fine : totalFines)
+        {
+            double fineAmount = 0.0;
+            std::string calculation;
+
+            if (fine.bookStatus == "Overdue")
             {
-                fineAmount = maxOverdueFine; // Apply max overdue fine limit
+                fineAmount = std::min(fine.dueDays * overdueFineRate, maxOverdueFine);
+                calculation = std::to_string(fine.dueDays) + " Days * RM" + std::format("{:.2f}", overdueFineRate);
             }
-            calculation = std::to_string(fine.dueDays) + " * " + std::to_string(overdueFineRate);
-        }
-        else if (fine.bookStatus == "Damaged")
-        {
-            fineAmount = std::stod(fine.bookPrice) * (damagedFinePercentage / 100);
-            calculation = fine.bookPrice + " * " + std::to_string(damagedFinePercentage) + "%";
-        }
-        else if (fine.bookStatus == "Lost")
-        {
-            fineAmount = std::stod(fine.bookPrice); // Full price for lost book
-            calculation = fine.bookPrice + " (Full Price)";
+            else if (fine.bookStatus == "Damaged")
+            {
+                fineAmount = std::stod(fine.bookPrice) * (damagedFinePercentage / 100);
+                calculation = "RM" + fine.bookPrice + " * " + std::to_string(damagedFinePercentage) + "%";
+            }
+            else if (fine.bookStatus == "Lost")
+            {
+                fineAmount = std::stod(fine.bookPrice);
+                calculation = "RM" + fine.bookPrice + " (Full Price)";
+            }
+
+            totalAmount += fineAmount;
+
+            receiptTable.add_row({
+                fine.loanID,
+                fine.bookID,
+                fine.bookTitle,
+                fine.bookPrice,
+                fine.bookStatus,
+                calculation,
+                "RM" + std::format("{:.2f}", fineAmount)
+                });
         }
 
-        totalAmount += fineAmount; // Add to the total payment amount
+        tableFormat(receiptTable);
+        std::cout << "\nTotal Amount to be Paid: RM" << std::format("{:.2f}", totalAmount) << "\n";
+        std::cout << "==================================================\n";
 
-        receiptTable.add_row({ fine.loanID, fine.bookID, fine.bookTitle, fine.bookPrice, fine.bookStatus, calculation, "$" + std::to_string(fineAmount) });
+        // Confirm payment
+        char paymentConfirmation;
+        std::cout << "Do you want to pay the total fine? (Y/N): ";
+        std::cin >> paymentConfirmation;
+
+        if (paymentConfirmation == 'Y' || paymentConfirmation == 'y')
+        {
+            // Generate a unique fine ID and get the current date/time
+            std::string fineID = generateFineID(db->getConnection());
+            std::string paymentDate = getCurrentTime();
+
+            // Insert payment details into the Fine table
+            std::string insertFineQuery = "INSERT INTO Fine (fineID, payment_date, amount, paymentStatus) VALUES ('" +
+                fineID + "', '" + paymentDate + "', " + std::format("{:.2f}", totalAmount) + ", 'Done')";
+            db->executeQuery(insertFineQuery);
+
+            for (const auto& fine : totalFines)
+            {
+                // Update Loan table with fine ID and payment date
+                std::string updateLoanQuery = "UPDATE Loan SET fineID = '" + fineID + "', return_date = '" + paymentDate + "' WHERE loanID = '" + fine.loanID + "'";
+                db->executeQuery(updateLoanQuery);
+
+                // If the book status is Overdue or Damaged, increment the quantity in the Book table
+                if (fine.bookStatus == "Overdue" || fine.bookStatus == "Damaged")
+                {
+                    std::string updateBookQuery = "UPDATE Book SET quantity = quantity + 1 WHERE bookID = '" + fine.bookID + "'";
+                    db->executeQuery(updateBookQuery);
+                }
+            }
+
+
+
+            std::cout << "\nPayment successful! All fines have been processed and recorded.\n";
+            system("pause");
+        }
+        else
+        {
+            std::cout << "\nPayment cancelled. No data was saved.\n";
+        }
     }
-
-    // Display the receipt table
-    tableFormat(receiptTable);
-
-    // Display the total amount
-    std::cout << "\nTotal Amount to be Paid: $" << totalAmount << "\n";
-    std::cout << "==================================================\n";
-
-    // Confirm payment
-    char paymentConfirmation;
-    std::cout << "Do you want to pay the total fine? (Y/N): ";
-    std::cin >> paymentConfirmation;
-
-    if (paymentConfirmation == 'Y' || paymentConfirmation == 'y')
+    catch (const std::exception& e)
     {
-        std::cout << "\nPayment successful! Thank you." << std::endl;
-
-        // Update the loan status in the database (e.g., mark as "Paid")
-        for (auto& fine : totalFines)
-        {
-            std::string updateQuery = "UPDATE Loan SET paymentStatus = 'Paid' WHERE loanID = '" + fine.loanID + "'";
-            db->executeQuery(updateQuery); // Mark the fine as paid
-        }
-    }
-    else
-    {
-        std::cout << "\nPayment cancelled." << std::endl;
+        std::cerr << "Error: " << e.what() << "\n";
     }
 
-    delete db; // Clean up the database connection
+    delete db; // Clean up database connection
 }
+
