@@ -18,7 +18,7 @@ void adminMenu(User loggingUser)
     do {
 
         system("cls");
-        std::cout << CYAN << "Welcome to Library Management System, " << BOLD << loggingUser.getName() << "!" << RESET << std::endl;
+        std::cout << CYAN << "Welcome to Library Management System, " << BOLD << loggingUser.getName() << RESET << "!" << std::endl;
         std::cout << "\nModule: " << std::endl;
         std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "My Profile" << RESET << std::endl;
         std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Borrowing / Returning" << RESET << std::endl;
@@ -104,7 +104,7 @@ void staffMenu(User loggingUser)
     do {
 
         system("cls");
-        std::cout << CYAN << "Welcome to Library Management System, " << BOLD << loggingUser.getName() << "!" << RESET << std::endl;
+        std::cout << CYAN << "Welcome to Library Management System, " << BOLD << loggingUser.getName()  << RESET << "!" << std::endl;
         std::cout << "\nModule: " << std::endl;
         std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "My Profile" << RESET << std::endl;
         std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Borrowing / Returning" << RESET << std::endl;
@@ -181,7 +181,7 @@ void userMenu(User loggingUser)
     do {
 
         system("cls");
-        std::cout << CYAN << "Welcome to Library Management System, " << BOLD << loggingUser.getName() << "!" << RESET << std::endl;
+        std::cout << CYAN << "Welcome to Library Management System, " << BOLD << loggingUser.getName() << RESET << "!" << std::endl;
         std::cout << "\nModule: " << std::endl;
         std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "My Profile" << RESET << std::endl;
         std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Find Books" << RESET << std::endl;
