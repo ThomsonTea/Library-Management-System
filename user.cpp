@@ -314,7 +314,6 @@ void User::userProfile(User& user)
     bool quitProfile = false;
     int selectedOption = 0;  // Default selection starts from the first option
     std::string displayUserQuery;
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     do
     {
         system("cls");
@@ -1219,7 +1218,7 @@ void User::registerUser()
                     switch (roleChoice)
                     {
                     case 1:
-                        data = "User";
+                        data = "Patron";
                         break;
                     case 2:
                         data = "Staff";
@@ -1238,7 +1237,7 @@ void User::registerUser()
                     newUser.setRole(data);
                     break;
                 case 8:
-                    prefix = (newUser.getRole() == "Admin") ? 'A' : (newUser.getRole() == "Staff") ? 'S' : 'U';
+                    prefix = (newUser.getRole() == "Admin") ? 'A' : (newUser.getRole() == "Staff") ? 'S' : 'P';
                     query = "SELECT userID FROM User WHERE userID LIKE ? ORDER BY userID DESC LIMIT 1";
                     pstmt = db->getConnection()->prepareStatement(query);
 

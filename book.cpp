@@ -263,7 +263,7 @@ void Book::searchBook()
                 query = "SELECT bookID, isbn, title, author, publisher, category, publicationYear, quantity, price, status FROM Book WHERE category LIKE '%" + data + "%'";
                 break;
             default:
-                std::cout << "\nInvalid Input, please try again..." << std::endl;
+                std::cout << RED << "\nInvalid Input, please try again..." << RESET << std::endl;
                 break;
             }
             break;

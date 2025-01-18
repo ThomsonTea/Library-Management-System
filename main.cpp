@@ -36,7 +36,7 @@ int main()
         {
             staffMenu(loggingUser); // Call the staff menu.
         }
-        else if (userRole == "User")
+        else if (userRole == "Patron")
         {
             userMenu(loggingUser); // Call the user menu.
         }

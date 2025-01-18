@@ -451,7 +451,7 @@ void Library::changeMaxBookBorrow() {
     std::string roleQuery = "SELECT role, MAX(maxBorrowable) AS maxBorrowable "
         "FROM rolePrivilege "
         "GROUP BY role "
-        "ORDER BY FIELD(role, 'User', 'Staff', 'Admin')";
+        "ORDER BY FIELD(role, 'Patron', 'Staff', 'Admin')";
     dbConnection* db = new dbConnection();
     std::string updateQuery;
     std::cin.ignore();
@@ -465,7 +465,7 @@ void Library::changeMaxBookBorrow() {
         db->fetchAndDisplayDataPivot(roleQuery);
 
         std::cout << "\nSelect Role: " << std::endl;
-        std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "User" << RESET << std::endl;
+        std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "Patron" << RESET << std::endl;
         std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Staff" << RESET << std::endl;
         std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "Admin" << RESET << std::endl;
 
@@ -508,7 +508,7 @@ void Library::changeMaxBookBorrow() {
             // Prepare the update query based on the selected role  
             switch (selected) {
             case 0:
-                updateQuery = "UPDATE rolePrivilege SET maxBorrowable='" + data + "' WHERE role = 'User'";
+                updateQuery = "UPDATE rolePrivilege SET maxBorrowable='" + data + "' WHERE role = 'Patron'";
                 break;
             case 1:
                 updateQuery = "UPDATE rolePrivilege SET maxBorrowable='" + data + "' WHERE role = 'Staff'";
@@ -543,7 +543,7 @@ void Library::changeBorrowingDuration() {
     bool selecting = true;
     std::string durationQuery = "SELECT role, borrowDuration "
         "FROM rolePrivilege "
-        "ORDER BY FIELD(role, 'User', 'Staff', 'Admin')";
+        "ORDER BY FIELD(role, 'Patron', 'Staff', 'Admin')";
     std::string updateQuery;
     std::cin.ignore();
     do{
@@ -555,7 +555,7 @@ void Library::changeBorrowingDuration() {
         db->fetchAndDisplayDataPivot(durationQuery);
 
         std::cout << "\nSelect Role: " << std::endl;
-        std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "User" << RESET << std::endl;
+        std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "Patron" << RESET << std::endl;
         std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Staff" << RESET << std::endl;
         std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "Admin" << RESET << std::endl;
 
@@ -598,7 +598,7 @@ void Library::changeBorrowingDuration() {
             // Prepare the update query based on the selected role  
             switch (selected) {
             case 0:
-                updateQuery = "UPDATE rolePrivilege SET borrowDuration='" + data + "' WHERE role = 'User'";
+                updateQuery = "UPDATE rolePrivilege SET borrowDuration='" + data + "' WHERE role = 'Patron'";
                 break;
             case 1:
                 updateQuery = "UPDATE rolePrivilege SET borrowDuration='" + data + "' WHERE role = 'Staff'";

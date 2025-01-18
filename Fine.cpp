@@ -91,7 +91,7 @@ void Fine::changeOverdueFineRate()
     bool selecting = true;
     std::string fineRateQuery = "SELECT role, overdueFineRate "
         "FROM rolePrivilege "
-        "ORDER BY FIELD(role, 'User', 'Staff', 'Admin')";
+        "ORDER BY FIELD(role, 'Patron', 'Staff', 'Admin')";
 
     std::string updateQuery;
     std::cin.ignore();
@@ -104,7 +104,7 @@ void Fine::changeOverdueFineRate()
         db->fetchAndDisplayDataPivot(fineRateQuery);
 
         std::cout << "\nSelect Role: " << std::endl;
-        std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "User" << RESET << std::endl;
+        std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "Patron" << RESET << std::endl;
         std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Staff" << RESET << std::endl;
         std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "Admin" << RESET << std::endl;
 
@@ -142,7 +142,7 @@ void Fine::changeOverdueFineRate()
             // Prepare the update query based on the selected role
             switch (selected) {
             case 0:
-                updateQuery = "UPDATE rolePrivilege SET overdueFineRate='" + data + "' WHERE role = 'User'";
+                updateQuery = "UPDATE rolePrivilege SET overdueFineRate='" + data + "' WHERE role = 'Patron'";
                 break;
             case 1:
                 updateQuery = "UPDATE rolePrivilege SET overdueFineRate='" + data + "' WHERE role = 'Staff'";
@@ -177,7 +177,7 @@ void Fine::changeMaxOverdueFine() {
     bool selecting = true;
     std::string maxFineQuery = "SELECT role, maxOverdueFine "
         "FROM rolePrivilege "
-        "ORDER BY FIELD(role, 'User', 'Staff', 'Admin')";
+        "ORDER BY FIELD(role, 'Patron', 'Staff', 'Admin')";
 
     std::string updateQuery;
     std::cin.ignore();
@@ -190,7 +190,7 @@ void Fine::changeMaxOverdueFine() {
         db->fetchAndDisplayDataPivot(maxFineQuery);
 
         std::cout << "\nSelect Role: " << std::endl;
-        std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "User" << RESET << std::endl;
+        std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "Patron" << RESET << std::endl;
         std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Staff" << RESET << std::endl;
         std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "Admin" << RESET << std::endl;
 
@@ -228,7 +228,7 @@ void Fine::changeMaxOverdueFine() {
             // Prepare the update query based on the selected role
             switch (selected) {
             case 0:
-                updateQuery = "UPDATE rolePrivilege SET maxOverdueFine='" + data + "' WHERE role = 'User'";
+                updateQuery = "UPDATE rolePrivilege SET maxOverdueFine='" + data + "' WHERE role = 'Patron'";
                 break;
             case 1:
                 updateQuery = "UPDATE rolePrivilege SET maxOverdueFine='" + data + "' WHERE role = 'Staff'";
@@ -264,7 +264,7 @@ void Fine::changedamagedFinePercentage()
     bool selecting = true;
     std::string damageFineQuery = "SELECT role, damagedFinePercentage "
         "FROM rolePrivilege "
-        "ORDER BY FIELD(role, 'User', 'Staff', 'Admin')";
+        "ORDER BY FIELD(role, 'Patron', 'Staff', 'Admin')";
 
     std::string updateQuery;
     std::cin.ignore();
@@ -277,7 +277,7 @@ void Fine::changedamagedFinePercentage()
         db->fetchAndDisplayDataPivot(damageFineQuery);
 
         std::cout << "\nSelect Role: " << std::endl;
-        std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "User" << RESET << std::endl;
+        std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "Patron" << RESET << std::endl;
         std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_YELLOW : "") << "Staff" << RESET << std::endl;
         std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_YELLOW : "") << "Admin" << RESET << std::endl;
 
@@ -315,7 +315,7 @@ void Fine::changedamagedFinePercentage()
             // Prepare the update query based on the selected role
             switch (selected) {
             case 0:
-                updateQuery = "UPDATE rolePrivilege SET damagedFinePercentage='" + data + "' WHERE role = 'User'";
+                updateQuery = "UPDATE rolePrivilege SET damagedFinePercentage='" + data + "' WHERE role = 'Patron'";
                 break;
             case 1:
                 updateQuery = "UPDATE rolePrivilege SET damagedFinePercentage='" + data + "' WHERE role = 'Staff'";
