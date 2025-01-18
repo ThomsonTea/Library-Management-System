@@ -61,16 +61,20 @@ void pivotTableFormat(tabulate::Table table)
         .font_align(tabulate::FontAlign::center)         // Center-align header
         .border_color(tabulate::Color::white);           // Set border color to white
 
-    table[0].format()
-        .font_color(tabulate::Color::white)              // Set font color to white
-        .font_background_color(tabulate::Color::blue)    // Set background color to cyan
-        .font_align(tabulate::FontAlign::center)
-        .padding_top(0.5)
-        .padding_bottom(0.5)
-        .border_color(tabulate::Color::white);           // Set border color to white
+    // Apply cyan background and white text to the entire header row (first row)
+    for (size_t i = 0; i < table[0].size(); ++i) // Loop through all header columns
+    {
+        table[0][i].format()
+            .font_color(tabulate::Color::white)         // Set font color to white
+            .font_background_color(tabulate::Color::cyan)  // Set background color to cyan
+            .font_align(tabulate::FontAlign::center)     // Align header text in center
+            .padding_top(0.5)
+            .padding_bottom(0.5)
+            .border_color(tabulate::Color::white);      // Set border color to white
+    }
 
     // Format the data rows
-    for (size_t i = 0; i < table.size(); ++i)
+    for (size_t i = 1; i < table.size(); ++i)  // Start from row 1 to avoid affecting the header
     {
         table[i][0].format() // Left column (parameters)
             .font_color(tabulate::Color::yellow)

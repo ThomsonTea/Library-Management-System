@@ -46,7 +46,7 @@ public:
     bool userVerify();
     bool isUser(const std::string& userId, const std::string& password);
     void registerUser();
-    void editProfile();
+    void editProfile(std::string userid);
     void userProfile(User& user);
     void retrieveUserFromDB(const std::string& userID);
     void changePassword(User& user);
