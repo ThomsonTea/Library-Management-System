@@ -23,7 +23,7 @@ dbConnection::dbConnection()
         driver = get_driver_instance();
         con = driver->connect(server, username, password);
         con->setSchema(database);
-        std::cout << GREEN << "Connected to the database successfully." << RESET << std::endl;
+        //std::cout << GREEN << "Connected to the database successfully." << RESET << std::endl;
     }
     catch (sql::SQLException& e)
     {
@@ -109,6 +109,58 @@ void dbConnection::fetchAndDisplayData(const std::string& query)
 
         // Print the table using tabulate
         tableFormat(table);
+
+        delete res;
+        delete stmt;
+    }
+    catch (sql::SQLException& e)
+    {
+        std::cerr << "Error fetching data: " << e.what() << std::endl;
+        system("pause");
+    }
+}
+
+void dbConnection::fetchAndDisplayDataPivot(const std::string& query)
+{
+    if (!con)
+    {
+        std::cerr << "No database connection available!" << std::endl;
+        return;
+    }
+    try
+    {
+        sql::Statement* stmt = con->createStatement();
+        sql::ResultSet* res = stmt->executeQuery(query);
+
+        // Get the metadata for column information
+        sql::ResultSetMetaData* meta = res->getMetaData();
+        int columnCount = meta->getColumnCount();
+
+        // Create a tabulate Table object
+        tabulate::Table table;
+
+        // Add column names to the table as header
+        tabulate::Table::Row_t header;
+        for (int i = 1; i <= columnCount; ++i)
+        {
+            // Use getColumnLabel() instead of getColumnName() to get aliases
+            header.push_back(meta->getColumnLabel(i));
+        }
+        table.add_row(header);
+
+        // Add data rows to the table
+        while (res->next())
+        {
+            tabulate::Table::Row_t row;
+            for (int i = 1; i <= columnCount; ++i)
+            {
+                row.push_back(res->getString(i));
+            }
+            table.add_row(row);
+        }
+
+        // Print the table using tabulate
+        pivotTableFormat(table);
 
         delete res;
         delete stmt;

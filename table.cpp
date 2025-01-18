@@ -10,18 +10,30 @@ void tableFormat(tabulate::Table table) {
         .padding_bottom(0.5)
         .border_color(tabulate::Color::white);           // Set border color to white
 
+    // Get the number of columns from the first row
+    size_t num_columns = table[0].size();
+
+    // Set fixed width for each column (example with 10 characters for each column)
+    // Adjust the width according to your needs
+    for (size_t col = 0; col < num_columns; ++col) {
+        table.column(col).format()
+            .width(13);  // Set width of the column to 10 characters
+    }
+
     // Format the data rows
     for (auto& row : table) {
         row.format()
             .font_style({ tabulate::FontStyle::bold })      // Set font style to bold
-            .font_align(tabulate::FontAlign::center)      // Center align text
-            .corner("*")                                  // No corner style
-            .border_color(tabulate::Color::white);        // Set border color to white
+            .font_align(tabulate::FontAlign::center)       // Center align text
+            .corner("*")                                   // No corner style
+            .border_color(tabulate::Color::white);         // Set border color to white
     }
 
     // Print the table after applying the format
     std::cout << table << std::endl;
 }
+
+
 
 void paraTableFormat(tabulate::Table table)
 {

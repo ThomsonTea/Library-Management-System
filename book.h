@@ -43,6 +43,7 @@ public:
 	void editBook();
 	void removeBook();
 	void libraryManagementMenu();
+	bool isIsbnUnique(const std::string& isbn);
 
 	std::string generateBookID(sql::Connection* conn);
 

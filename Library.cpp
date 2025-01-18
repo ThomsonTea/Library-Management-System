@@ -30,7 +30,6 @@ void Library::inputUserData()
     bool userSelected = false;
     User user(db);
     std::vector<std::map<std::string, std::string>> roleResult;
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Clear the input buffer
     std::string userRole;
 
     do
@@ -286,7 +285,7 @@ void Library::borrowBook(User user)
                         std::cout << GREEN << "Book borrowed successfully!" << std::endl;
                         std::cout << "Book: " << book.getBookID() << RESET << std::endl;
                         std::this_thread::sleep_for(std::chrono::seconds(2));
-                        borrowing = false;  // Exit the borrowing module  
+                        continue;
                     }
                     catch (const std::exception& e) {
                         std::cout << RED << "Error: " << e.what() << RESET << std::endl;
@@ -388,12 +387,12 @@ std::string Library::generateLoanID(sql::Connection* conn)
 
 void Library::settings()
 {
-    dbConnection* db = new dbConnection();
     bool loggedIn = false;
     int selected = 0;  // Keeps track of which option is selected.
     bool selecting = true;
     Library library(db);
     Fine fineManager(db);
+
     do {
         system("cls");
         std::cout << CYAN << "Welcome to Library Management System! " << RESET << std::endl;
@@ -406,9 +405,7 @@ void Library::settings()
 
         std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, or press Esc to quit.\n";
 
-        // Capture user input for navigation
-        char c = _getch(); // Use _getch() to get key press without waiting for enter.
-        std::string exitpass;
+        char c = _getch();  // Read the key press
         switch (c) {
         case KEY_UP:
             selected = (selected - 1 + 5) % 5; // Wrap around to the last option if at the top.
@@ -446,23 +443,26 @@ void Library::settings()
     } while (selecting);
 }
 
+
+
 void Library::changeMaxBookBorrow() {
-    dbConnection* db = new dbConnection();
     int selected = 0;  // Keeps track of which option is selected.  
     bool selecting = true;
     std::string roleQuery = "SELECT role, MAX(maxBorrowable) AS maxBorrowable "
         "FROM rolePrivilege "
         "GROUP BY role "
         "ORDER BY FIELD(role, 'User', 'Staff', 'Admin')";
-
-    std::string updateQuery, data;
-
+    dbConnection* db = new dbConnection();
+    std::string updateQuery;
+    std::cin.ignore();
     while (selecting) {
+        std::string data;
         system("cls");
         std::cout << "Welcome to Library Management System! " << std::endl;
 
+
         // Fetch and display current borrowing limits  
-        db->fetchAndDisplayData(roleQuery);
+        db->fetchAndDisplayDataPivot(roleQuery);
 
         std::cout << "\nSelect Role: " << std::endl;
         std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "User" << RESET << std::endl;
@@ -481,16 +481,14 @@ void Library::changeMaxBookBorrow() {
             selected = (selected + 1) % 3; // Wrap around to the first option if at the bottom.  
             break;
         case KEY_ENTER:
-            std::cout << YELLOW << "\n\nEnter new maximum books that can be borrowed: " << RESET << std::endl;
-            std::cout << "\x1b[22;47H";
-            std::cin.ignore();
-            getline(std::cin, data);
+            std::cout << YELLOW << "Enter new maximum books that can be borrowed: " << RESET;
+            std::getline(std::cin, data);
 
             // Validate the input  
             try {
-                int maxBooks = std::stoi(data); // Convert input string to integer
-                if (maxBooks <= 0) {
-                    std::cout << "Error: The maximum borrowing limit must be a positive integer!" << std::endl;
+                int borrowDuration = std::stoi(data); // Convert input string to integer
+                if (borrowDuration <= 0) {
+                    std::cout << "Error: The borrowing duration must be a positive integer!" << std::endl;
                     std::this_thread::sleep_for(std::chrono::seconds(2)); // Pause for 2 seconds
                     break; // Go back to the menu
                 }
@@ -505,6 +503,7 @@ void Library::changeMaxBookBorrow() {
                 std::this_thread::sleep_for(std::chrono::seconds(2)); // Pause for 2 seconds
                 break; // Go back to the menu
             }
+
 
             // Prepare the update query based on the selected role  
             switch (selected) {
@@ -524,7 +523,7 @@ void Library::changeMaxBookBorrow() {
 
             // Execute the update query  
             db->executeQuery(updateQuery);
-            std::cout << "Successfully updated the maximum borrowable limit." << std::endl;
+            std::cout << GREEN << "Successfully updated the maximum borrowable limit." << RESET << std::endl;
             std::this_thread::sleep_for(std::chrono::seconds(2)); // Pause for 2 seconds  
             break;
         case KEY_ESC:
@@ -545,7 +544,6 @@ void Library::changeBorrowingDuration() {
     std::string durationQuery = "SELECT role, borrowDuration "
         "FROM rolePrivilege "
         "ORDER BY FIELD(role, 'User', 'Staff', 'Admin')";
-
     std::string updateQuery;
     std::cin.ignore();
     do{
@@ -554,7 +552,7 @@ void Library::changeBorrowingDuration() {
         std::cout << "Welcome to Library Management System! " << std::endl;
 
         // Fetch and display current borrowing durations  
-        db->fetchAndDisplayData(durationQuery);
+        db->fetchAndDisplayDataPivot(durationQuery);
 
         std::cout << "\nSelect Role: " << std::endl;
         std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "User" << RESET << std::endl;
@@ -742,7 +740,7 @@ void Library::returnBook(User user) {
                         std::cout << GREEN << "Book Returned successfully!" << std::endl;
                         std::cout << "Book: " << book.getBookID() << RESET << std::endl;
                         std::this_thread::sleep_for(std::chrono::seconds(2));
-                        borrowing = false;  // Exit the returning module  
+                        continue;
                     }
                     catch (const std::exception& e) {
                         std::cout << RED << "Error: " << e.what() << RESET << std::endl;

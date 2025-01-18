@@ -18,6 +18,7 @@ public:
 
     void executeQuery(const std::string& query);
     void fetchAndDisplayData(const std::string& query);
+    void fetchAndDisplayDataPivot(const std::string& query);
     std::vector<std::map<std::string, std::string>> fetchResults(const std::string& query);
     bool recordExists(const std::string& query);
     int getInt(const std::string& query, const std::vector<std::string>& params);

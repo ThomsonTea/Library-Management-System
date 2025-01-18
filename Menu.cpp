@@ -13,7 +13,7 @@ void adminMenu(User loggingUser)
     bool loggedIn = false;
     int selected = 0;  // Keeps track of which option is selected.
     bool selecting = true;
-
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         // Main menu loop
     do {
 
@@ -30,6 +30,7 @@ void adminMenu(User loggingUser)
         std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, or press Esc to quit.\n";
 
         // Capture user input for navigation
+
         char c = _getch(); // Use _getch() to get key press without waiting for enter.
         std::string exitpass;
         switch (c) {
@@ -98,7 +99,7 @@ void staffMenu(User loggingUser)
     bool loggedIn = false;
     int selected = 0;  // Keeps track of which option is selected.
     bool selecting = true;
-
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         // Main menu loop
     do {
 
@@ -175,7 +176,7 @@ void userMenu(User loggingUser)
     bool loggedIn = false;
     int selected = 0;  // Keeps track of which option is selected.
     bool selecting = true;
-
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     // Main menu loop
     do {
 

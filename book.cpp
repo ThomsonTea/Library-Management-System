@@ -190,14 +190,14 @@ void Book::searchBook()
     int selected = 0;  // Keeps track of which option is selected.
     bool selecting = true;
     std::string query =
-        "SELECT B.bookID, B.isbn, B.title, B.author, B.publisher, B.category, B.publicationYear, "
-        "B.quantity, B.price, B.status, COUNT(L.bookID) AS borrow_count"
-        "FROM Book B"
-        "JOIN Loan L ON B.bookID = L.bookID"
-        "WHERE L.return_date IS NOT NULL  -- Ensure the book is returned(borrowed and returned)"
-        "GROUP BY B.bookID"
-        "ORDER BY borrow_count DESC"
-        "LIMIT 1";
+        "SELECT ROW_NUMBER() OVER (ORDER BY COUNT(L.bookID) DESC) AS Ranking, B.bookID, B.isbn, B.title, B.author, B.publisher, B.category, B.publicationYear, "
+        "B.quantity, B.status "
+        "FROM Book B "
+        "JOIN Loan L ON B.bookID = L.bookID "
+        "WHERE L.return_date IS NOT NULL "
+        "GROUP BY B.bookID "
+        "ORDER BY COUNT(L.bookID) DESC "
+        "LIMIT 10";
 
     do
     {
@@ -215,6 +215,7 @@ void Book::searchBook()
 
         std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, press R to reset searching, or press Esc to quit.\n";
 
+        std::cout << CYAN << "\n== What's Popular Now ==" << RESET << std::endl;
         db->fetchAndDisplayData(query);  // This should display data in a table format.
 
         char c = _getch(); // Use _getch() to get key press without waiting for enter.
@@ -394,7 +395,7 @@ void Book::addBook()
         Book newBook(db);
         int selected = 0;
         bool selecting = true;
-
+        std::cin.ignore();
         do
         {
             system("cls");
@@ -444,26 +445,81 @@ void Book::addBook()
                 case 0:
                     std::cout << "\x1b[24;11H";
                     std::getline(std::cin, data);
+                    if (data.empty())
+                    {
+                        std::cout << "\x1b[24;11H" << RED << "Title cannot be empty. Please try again." << RESET;
+                        std::this_thread::sleep_for(std::chrono::seconds(2));
+                        break;
+                    }
                     newBook.setTitle(data);
                     break;
                 case 1:
                     std::cout << "\x1b[25;10H";
                     std::getline(std::cin, data);
+
+                    // Check if the input is empty
+                    if (data.empty())
+                    {
+                        std::cout << "\x1b[25;10H" << RED << "ISBN cannot be empty. Please try again." << RESET;
+                        std::this_thread::sleep_for(std::chrono::seconds(2));
+                        break;
+                    }
+
+                    // Validate the ISBN input
+                    if (!isValidIsbn(data)) // Use 'data' here, not 'isbn'
+                    {
+                        std::cout << "\x1b[25;10H" << RED << "ISBN must contain 10-digit or 13-digit number." << RESET;
+                        std::this_thread::sleep_for(std::chrono::seconds(2));
+                        break;
+                    }
+
+                    // Check if the ISBN is unique
+                    if (!newBook.isIsbnUnique(data)) // Check if the ISBN is unique in the database
+                    {
+                        std::cout << "\x1b[25;10H" << RED << "ISBN already exists. Please enter a unique ISBN." << RESET;
+                        std::this_thread::sleep_for(std::chrono::seconds(2));
+                        break;
+                    }
+
+                    // If valid and unique, set the ISBN
                     newBook.setIsbn(data);
                     break;
                 case 2:
-                    std::cout << "\x1b[26;12H";
-                    std::getline(std::cin, data);
+                    do
+                    {
+                        std::cout << "\x1b[26;12H";
+                        std::getline(std::cin, data);
+                        if (data.empty())
+                        {
+                            std::cout << "\x1b[26;12H" << RED << "Author cannot be empty. Please try again." << RESET;
+                            std::this_thread::sleep_for(std::chrono::seconds(2));
+                            break;
+                        }
+                    } while (data.empty());
                     newBook.setAuthor(data);
                     break;
+
                 case 3:
                     std::cout << "\x1b[27;15H";
                     std::getline(std::cin, data);
+                    if (data.empty())
+                    {
+                        std::cout << "\x1b[27;15H" << RED << "Publisher cannot be empty. Please try again." << RESET;
+                        std::this_thread::sleep_for(std::chrono::seconds(2));
+                        break;
+                    }
                     newBook.setPublisher(data);
                     break;
+
                 case 4:
                     std::cout << "\x1b[28;14H";
                     std::getline(std::cin, data);
+                    if (data.empty())
+                    {
+                        std::cout << "\x1b[28;14H" << RED << "Category cannot be empty. Please try again." << RESET;
+                        std::this_thread::sleep_for(std::chrono::seconds(2));
+                        break;
+                    }
                     newBook.setCategory(data);
                     break;
                 case 5:
@@ -724,27 +780,67 @@ void Book::editBook()
                     {
                     case 0:
                         std::cout << "\x1b[24;11H";
-                        getline(std::cin, data);  // Allow empty title
+                        std::getline(std::cin, data);  // Allow empty title
+                        if (data.empty()) {
+                            std::cout << "\x1b[24;11H" << RED << "Title cannot be empty. Please try again." << RESET;
+                            std::this_thread::sleep_for(std::chrono::seconds(2));
+                            continue;
+                        }
                         book.setTitle(data);
                         break;
+
                     case 1:
                         std::cout << "\x1b[25;10H";
-                        getline(std::cin, data);  // Allow empty ISBN
+                        std::getline(std::cin, data);  // Allow empty ISBN
+                        if (data.empty()) {
+                            std::cout << "\x1b[25;10H" << RED << "ISBN cannot be empty. Please try again." << RESET;
+                            std::this_thread::sleep_for(std::chrono::seconds(2));
+                            continue;
+                        }
+                        if (!isValidIsbn(data)) {
+                            std::cout << "\x1b[25;10H" << RED << "Invalid ISBN format. It must contain 10 or 13 digits." << RESET;
+                            std::this_thread::sleep_for(std::chrono::seconds(2));
+                            continue;
+                        }
+                        // Check for ISBN uniqueness (ensure no duplicates)
+                        if (!isIsbnUnique(data)) {
+                            std::cout << "\x1b[25;10H" << RED << "ISBN must be unique. Please try again." << RESET;
+                            std::this_thread::sleep_for(std::chrono::seconds(2));
+                            continue;
+                        }
                         book.setIsbn(data);
                         break;
+
                     case 2:
                         std::cout << "\x1b[26;12H";
-                        getline(std::cin, data);  // Allow empty author
+                        std::getline(std::cin, data);  // Allow empty author
+                        if (data.empty()) {
+                            std::cout << "\x1b[26;12H" << RED << "Author cannot be empty. Please try again." << RESET;
+                            std::this_thread::sleep_for(std::chrono::seconds(2));
+                            continue;
+                        }
                         book.setAuthor(data);
                         break;
+
                     case 3:
                         std::cout << "\x1b[27;15H";
-                        getline(std::cin, data);  // Allow empty publisher
+                        std::getline(std::cin, data);  // Allow empty publisher
+                        if (data.empty()) {
+                            std::cout << "\x1b[27;15H" << RED << "Publisher cannot be empty. Please try again." << RESET;
+                            std::this_thread::sleep_for(std::chrono::seconds(2));
+                            continue;
+                        }
                         book.setPublisher(data);
                         break;
+
                     case 4:
                         std::cout << "\x1b[28;14H";
-                        getline(std::cin, data);  // Allow empty category
+                        std::getline(std::cin, data);  // Allow empty category
+                        if (data.empty()) {
+                            std::cout << "\x1b[28;14H" << RED << "Category cannot be empty. Please try again." << RESET;
+                            std::this_thread::sleep_for(std::chrono::seconds(2));
+                            continue;
+                        }
                         book.setCategory(data);
                         break;
                     case 5:
@@ -999,4 +1095,11 @@ void Book::removeBook()
             break;
         }
     }while (selecting);  // End of loop
+}
+
+bool Book::isIsbnUnique(const std::string& isbn)
+{
+    std::string query = "SELECT COUNT(*) FROM Book WHERE isbn = '" + isbn + "';";
+    int count = db->fetchSingleResult(query);
+    return count == 0;
 }

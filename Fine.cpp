@@ -83,6 +83,7 @@ const std::vector<Fine>& Fine::getFines() const {
 void Fine::clearFines() {
     fineBooks.clear();
 }
+
 void Fine::changeOverdueFineRate()
 {
     dbConnection* db = new dbConnection();
@@ -100,7 +101,7 @@ void Fine::changeOverdueFineRate()
         std::cout << "Welcome to Library Management System!" << std::endl;
 
         // Fetch and display current overdue fine rates
-        db->fetchAndDisplayData(fineRateQuery);
+        db->fetchAndDisplayDataPivot(fineRateQuery);
 
         std::cout << "\nSelect Role: " << std::endl;
         std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "User" << RESET << std::endl;
@@ -120,7 +121,7 @@ void Fine::changeOverdueFineRate()
             break;
         case KEY_ENTER:
             std::cout << YELLOW << "\n\nEnter new overdue fine rate: " << RESET << std::endl;
-            std::cout << "\x1b[22;40H";
+            std::cout << "\x1b[22;29H";
             getline(std::cin, data);
 
             // Validate the input
@@ -186,7 +187,7 @@ void Fine::changeMaxOverdueFine() {
         std::cout << "Welcome to Library Management System!" << std::endl;
 
         // Fetch and display current max overdue fines
-        db->fetchAndDisplayData(maxFineQuery);
+        db->fetchAndDisplayDataPivot(maxFineQuery);
 
         std::cout << "\nSelect Role: " << std::endl;
         std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "User" << RESET << std::endl;
@@ -206,7 +207,7 @@ void Fine::changeMaxOverdueFine() {
             break;
         case KEY_ENTER:
             std::cout << YELLOW << "\n\nEnter new maximum overdue fine: " << RESET << std::endl;
-            std::cout << "\x1b[22;40H";
+            std::cout << "\x1b[22;32H";
             getline(std::cin, data);
 
             // Validate the input
@@ -273,7 +274,7 @@ void Fine::changedamagedFinePercentage()
         std::cout << "Welcome to Library Management System!" << std::endl;
 
         // Fetch and display current damage fine percentages
-        db->fetchAndDisplayData(damageFineQuery);
+        db->fetchAndDisplayDataPivot(damageFineQuery);
 
         std::cout << "\nSelect Role: " << std::endl;
         std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "User" << RESET << std::endl;
@@ -293,7 +294,7 @@ void Fine::changedamagedFinePercentage()
             break;
         case KEY_ENTER:
             std::cout << YELLOW << "\n\nEnter new damage fine percentage: " << RESET << std::endl;
-            std::cout << "\x1b[22;40H";
+            std::cout << "\x1b[22;34H";
             getline(std::cin, data);
 
             // Validate the input
