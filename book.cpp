@@ -253,17 +253,18 @@ void Book::searchBook()
                 query = "SELECT bookID, isbn, title, author, publisher, category, publicationYear, quantity, price, status FROM Book WHERE author LIKE '%" + data + "%'";
                 break;
             case 4:
-                std::cout << "\x1b[8;14H";
+                std::cout << "\x1b[8;15H";
                 std::cin >> data;
                 query = "SELECT bookID, isbn, title, author, publisher, category, publicationYear, quantity, price, status FROM Book WHERE publisher LIKE '%" + data + "%'";
                 break;
             case 5:
-                std::cout << "\x1b[9;13H";
+                std::cout << "\x1b[9;14H";
                 std::cin >> data;
                 query = "SELECT bookID, isbn, title, author, publisher, category, publicationYear, quantity, price, status FROM Book WHERE category LIKE '%" + data + "%'";
                 break;
             default:
                 std::cout << RED << "\nInvalid Input, please try again..." << RESET << std::endl;
+                std::this_thread::sleep_for(std::chrono::seconds(2));
                 break;
             }
             break;
@@ -689,6 +690,7 @@ void Book::editBook()
                 break;
             default:
                 std::cout << RED << "Invalid selection!" << RESET << std::endl;
+                std::this_thread::sleep_for(std::chrono::seconds(2));
                 continue;
             }
 
@@ -699,6 +701,7 @@ void Book::editBook()
             if (!db->recordExists(query))
             {
                 std::cout << "\x1b[9;1H" << "\033[K" << RED << "Error: Book not found!" << RESET << std::endl;
+                std::this_thread::sleep_for(std::chrono::seconds(2));
                 continue;
             }
 
