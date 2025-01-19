@@ -37,7 +37,7 @@ void Library::inputUserData()
         system("cls");
 
         std::cout << CYAN << "Welcome to Library !\n" << RESET << std::endl;
-        std::cout << "Borrowing:" << std::endl;
+        std::cout << "Input User ID:" << std::endl;
         std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "User ID: " << RESET << std::endl;
         std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_GREEN : "") << "CONFIRM" << RESET << std::endl;
         std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_RED : "") << "RETURN BACK" << RESET << std::endl;
@@ -46,7 +46,7 @@ void Library::inputUserData()
 
         if (userSelected)
         {
-            std::cout << BLACK << BG_WHITE << "Borrowing Book Status:" << RESET << "\n";
+            std::cout << BLACK << BG_WHITE << "Borrowing Book Status of " << BLUE << user.getName() << ":" << RESET << "\n";
             roleQuery = "SELECT role FROM User WHERE userID='" + user.getUserID() + "'";
             roleResult = db->fetchResults(roleQuery);
             if (roleResult.empty())
@@ -143,7 +143,7 @@ void Library::borrowBook(User user)
     do
     {
         system("cls");
-        std::cout << "Borrowing book for User: " << user.getUserID() << std::endl;
+        std::cout << BLACK << BG_WHITE << "Borrowing book for User: " << BLUE << user.getUserID() << RESET << std::endl;
         std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "Enter Book ID: " << RESET << std::endl;
         std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_GREEN : "") << "CONFIRM" << RESET << std::endl;
         std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_RED : "") << "RETURN BACK" << RESET << std::endl;
@@ -656,18 +656,35 @@ void Library::returnBook(User user) {
     bool bookConfirmed = false;
     Book book(db);
     std::vector<std::map<std::string, std::string>> result;
+    std::string checkLoanQuery, returnQuery;
 
     do {
         system("cls");
-        std::cout << "Returning book for User: " << user.getUserID() << std::endl;
+        std::cout << BLACK << BG_WHITE << "Returning book for User: " << BLUE << user.getUserID() << RESET << std::endl;
         std::cout << (selected == 0 ? "-> " : "   ") << (selected == 0 ? BG_YELLOW : "") << "Enter Book ID: " << RESET << std::endl;
         std::cout << (selected == 1 ? "-> " : "   ") << (selected == 1 ? BG_GREEN : "") << "CONFIRM" << RESET << std::endl;
         std::cout << (selected == 2 ? "-> " : "   ") << (selected == 2 ? BG_RED : "") << "RETURN BACK" << RESET << std::endl;
         std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, or press Esc to quit.\n";
+        std::cout << BLACK << BG_WHITE << "\n\nBook Status of " << BLUE << user.getName() << RESET << std::endl;
+        std::string bookQuery = "SELECT "
+            "b.bookID, "
+            "b.title, "
+            "b.author, "
+            "b.category, "
+            "b.price, "
+            "l.bookStatus, "
+            "l.borrow_date, "
+            "l.due_date "
+            "FROM Loan l "
+            "JOIN Book b ON l.bookID = b.bookID "
+            "WHERE userid ='" + user.getUserID() + "' AND l.bookStatus = 'Borrowing' AND l.return_date IS NULL ORDER BY due_date" ;
 
-        if (bookConfirmed) {
-            // Fetch and display book details  
-            std::string bookQuery = "SELECT "
+        db->fetchAndDisplayData(bookQuery);
+
+        if (bookConfirmed)
+        {
+            std::cout << BLACK << BG_WHITE << "\nBook To be Returned: " << RESET << std::endl;
+            returnQuery = "SELECT "
                 "b.bookID, "
                 "b.title, "
                 "b.author, "
@@ -678,9 +695,14 @@ void Library::returnBook(User user) {
                 "l.due_date "
                 "FROM Loan l "
                 "JOIN Book b ON l.bookID = b.bookID "
-                "WHERE userid ='" + user.getUserID() + "' AND l.bookStatus = 'Borrowing' AND l.return_date IS NULL ORDER BY due_date ASC LIMIT 1" ;
+                "WHERE b.bookID = '" + book.getBookID() + "' AND "
+                "l.userID = '" + user.getUserID() + "' AND "
+                "l.bookStatus IN('Borrowing', 'Overdue') AND "
+                "l.return_date IS NULL "
+                "ORDER BY l.due_date";
 
-            db->fetchAndDisplayData(bookQuery);
+
+            db->fetchAndDisplayData(returnQuery);
         }
 
         char c = _getch(); // Use _getch() to get key press without waiting for enter.  
@@ -699,7 +721,7 @@ void Library::returnBook(User user) {
 
                 try {
                     // Check if the book is borrowed by the user
-                    std::string checkLoanQuery = "SELECT loanID, due_date FROM Loan WHERE bookID = '" + bookID + "' AND userID = '" + user.getUserID() + "' AND bookStatus = 'Borrowing' ORDER BY due_date ASC LIMIT 1";
+                    checkLoanQuery = "SELECT loanID, due_date FROM Loan WHERE bookID = '" + bookID + "' AND userID = '" + user.getUserID() + "' AND bookStatus = 'Borrowing' ORDER BY due_date ASC LIMIT 1";
                     result = db->fetchResults(checkLoanQuery);
 
                     if (result.empty()) {
@@ -707,10 +729,9 @@ void Library::returnBook(User user) {
                         std::this_thread::sleep_for(std::chrono::seconds(2));
                         return;  // Exit the function if the book is not borrowed
                     }
-
+                    bookConfirmed = true;
                     // Retrieve book details and confirm the book
-                    book.retrieveBookFromDB(bookID);
-                    bookConfirmed = true;  // Book is valid  
+                    book.retrieveBookFromDB(bookID); 
                 }
                 catch (const std::exception& e) {
                     std::cout << RED << "Error processing book: " << e.what() << RESET << std::endl;

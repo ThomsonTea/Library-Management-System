@@ -1,6 +1,6 @@
 set terminal png size 1024,768
-set output 'annual_report_2024.png'
-set title 'Annual Report - 2024 (Generated on: 2025-01-18 17:40:02)'
+set output 'annual_report_2025.png'
+set title 'Annual Report - 2025 (Generated on: 2025-01-19 20:38:02)'
 set xlabel 'Month'
 set ylabel 'Count'
 set grid

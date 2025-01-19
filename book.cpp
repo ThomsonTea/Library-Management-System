@@ -197,7 +197,7 @@ void Book::searchBook()
         "WHERE L.return_date IS NOT NULL "
         "GROUP BY B.bookID "
         "ORDER BY COUNT(L.bookID) DESC "
-        "LIMIT 10";
+        "LIMIT 5";
 
     do
     {
@@ -234,32 +234,32 @@ void Book::searchBook()
             switch (selected) {
             case 0:
                 std::cout << "\x1b[4;8H";
-                std::cin >> data;
+                getline(std::cin, data);
                 query = "SELECT bookID, isbn, title, author, publisher, category, publicationYear, quantity, price, status FROM Book WHERE bookID LIKE '%" + data + "%'";
                 break;
             case 1:
                 std::cout << "\x1b[5;11H";
-                std::cin >> data;
+                getline(std::cin, data);
                 query = "SELECT bookID, isbn, title, author, publisher, category, publicationYear, quantity, price, status FROM Book WHERE title LIKE '%" + data + "%'";
                 break;
             case 2:
                 std::cout << "\x1b[6;10H";
-                std::cin >> data;
+                getline(std::cin, data);
                 query = "SELECT bookID, isbn, title, author, publisher, category, publicationYear, quantity, price, status FROM Book WHERE isbn LIKE '%" + data + "%'";
                 break;
             case 3:
                 std::cout << "\x1b[7;12H";
-                std::cin >> data;
+                getline(std::cin, data);
                 query = "SELECT bookID, isbn, title, author, publisher, category, publicationYear, quantity, price, status FROM Book WHERE author LIKE '%" + data + "%'";
                 break;
             case 4:
                 std::cout << "\x1b[8;15H";
-                std::cin >> data;
+                getline(std::cin, data);
                 query = "SELECT bookID, isbn, title, author, publisher, category, publicationYear, quantity, price, status FROM Book WHERE publisher LIKE '%" + data + "%'";
                 break;
             case 5:
                 std::cout << "\x1b[9;14H";
-                std::cin >> data;
+                getline(std::cin, data);
                 query = "SELECT bookID, isbn, title, author, publisher, category, publicationYear, quantity, price, status FROM Book WHERE category LIKE '%" + data + "%'";
                 break;
             default:
@@ -396,7 +396,6 @@ void Book::addBook()
         Book newBook(db);
         int selected = 0;
         bool selecting = true;
-        std::cin.ignore();
         do
         {
             system("cls");
@@ -561,7 +560,6 @@ void Book::addBook()
                 case 8:
                     std::cout << "\x1b[32;48H";
                     std::cin >> intData;
-                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
                     if (intData == 1) {
                         newBook.setStatus("Available");
                     }
@@ -769,6 +767,8 @@ void Book::editBook()
                 std::cout << (selected == 7 ? "-> " : "   ") << (selected == 7 ? BG_YELLOW : "") << "Status [1 for Available, 0 for Unavailable]: " << RESET << std::endl;
                 std::cout << (selected == 8 ? "-> " : "   ") << (selected == 8 ? BG_GREEN : "") << "Save and Exit" << RESET << std::endl;
 
+                std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, or press Esc to quit.\n";
+
                 char fieldInput = _getch();
                 switch (fieldInput)
                 {
@@ -958,6 +958,7 @@ void Book::removeBook()
 
         if (bookSelected && !deleteConfirmed)
         {
+            std::cout << GREEN << "Press Enter to confirm deletion, or Esc to cancel." << RESET << std::endl;
             char c = _getch();
             switch (c)
             {
@@ -969,9 +970,12 @@ void Book::removeBook()
                     std::string deleteQuery = "DELETE FROM Book WHERE " + selectedSearchCriteria + "='" + searchData + "'";
                     db->executeQuery(deleteQuery);
                     std::cout << GREEN << "Book deleted successfully!" << RESET << std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(2));
                 }
                 else {
                     std::cout << RED << "Failed to delete book!" << RESET << std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(2));
+
                 }
                 bookSelected = false;  // Reset book selection
                 deleteConfirmed = false; // Reset passkey confirmation
@@ -1026,7 +1030,6 @@ void Book::removeBook()
             switch (selected) {
             case 0:
                 std::cout << "\x1b[4;13H";
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // avoid '' data save inside and couse error
                 getline(std::cin, searchData);
                 query = "SELECT bookID AS 'Book ID', "
                     "title AS 'Title', "
@@ -1048,7 +1051,6 @@ void Book::removeBook()
                 break;
             case 1:
                 std::cout << "\x1b[5;11H";
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // avoid '' data save inside and couse error
                 getline(std::cin, searchData);
                 query = "SELECT bookID AS 'Book ID', "
                     "title AS 'Title', "
@@ -1069,7 +1071,6 @@ void Book::removeBook()
                 break;
             case 2:
                 std::cout << "\x1b[6;10H";
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // avoid '' data save inside and couse error
                 getline(std::cin, searchData);
                 query = "SELECT bookID AS 'Book ID', "
                     "title AS 'Title', "

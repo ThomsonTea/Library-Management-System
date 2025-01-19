@@ -203,6 +203,9 @@ void Report::reportingMenu()
                     case KEY_DOWN:
                         yearSelected = (yearSelected + 1) % 2; // Toggle between 2024 and 2025
                         break;
+                    case KEY_ESC:
+                        inYearSelection = false;
+                        break;
                     case KEY_ENTER:
                         if (yearSelected == 0)
                             generateAnnualReport("2024"); // Generate for 2024

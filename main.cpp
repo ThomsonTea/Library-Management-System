@@ -26,7 +26,7 @@ int main()
         loggingUser.retrieveUserFromDB(loggingUser.getUserID());
 
         // Determine user role and redirect to the appropriate menu.
-        std::string userRole = loggingUser.getRole(); // Assumes `getRole()` returns the role as a string.
+        std::string userRole = loggingUser.getRole();
 
         if (userRole == "Admin")
         {

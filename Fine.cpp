@@ -439,7 +439,7 @@ void Fine::fineMenu(User user) {
         std::cout << "\n\nUse arrow keys to navigate, press Enter to select, or press Esc to quit.\n";
 
         // Display fine books
-        std::cout << "=== Fine Books ===" << std::endl;
+        std::cout << "=== Fine Books By " << YELLOW << user.getName() << RESET << "=== " << std::endl;
         db->fetchAndDisplayData(statusQuery);
 
         // Display total fines table if the vector is not empty
@@ -463,131 +463,131 @@ void Fine::fineMenu(User user) {
         case KEY_DOWN:
             selected = (selected + 1) % 3;
             break;
+        case KEY_ESC:
+            selecting = false;
+            break;
         case KEY_ENTER:
-            switch (selected) {
-            case 0: {  // Insert Loan ID
-                std::cout << "\x1b[2;20H";
-                std::getline(std::cin, loanID);
+            switch (selected) 
+            {
+                case 0: {  // Insert Loan ID
+                    std::cout << "\x1b[2;20H";
+                    std::getline(std::cin, loanID);
 
-                query =
-                    "SELECT l.loanID, l.userID, l.bookID, l.bookStatus, l.due_date, b.title, b.price "
-                    "FROM Loan l "
-                    "JOIN Book b ON l.bookID = b.bookID "
-                    "WHERE l.loanID = '" + loanID + "' "
-                    "AND l.userID = '" + user.getUserID() + "' "
-                    "AND l.bookStatus IN ('Borrowing', 'Overdue', 'Lost', 'Damaged') "
-                    "AND l.return_date IS NUll "
-                    "ORDER BY l.due_date ASC LIMIT 1";
+                    query =
+                        "SELECT l.loanID, l.userID, l.bookID, l.bookStatus, l.due_date, b.title, b.price "
+                        "FROM Loan l "
+                        "JOIN Book b ON l.bookID = b.bookID "
+                        "WHERE l.loanID = '" + loanID + "' "
+                        "AND l.userID = '" + user.getUserID() + "' "
+                        "AND l.bookStatus IN ('Borrowing', 'Overdue', 'Lost', 'Damaged') "
+                        "AND l.return_date IS NUll "
+                        "ORDER BY l.due_date ASC LIMIT 1";
 
-                result = db->fetchResults(query);
+                    result = db->fetchResults(query);
 
-                if (result.empty()) {
-                    std::cout << RED << "Error: No matching book found in the required status." << RESET << std::endl;
-                    std::this_thread::sleep_for(std::chrono::seconds(2));
-                    break;
-                }
+                    if (result.empty()) {
+                        std::cout << RED << "Error: No matching book found in the required status." << RESET << std::endl;
+                        std::this_thread::sleep_for(std::chrono::seconds(2));
+                        continue;
+                    }
 
-                loanID = result[0]["loanID"];
-                bookStatus = result[0]["bookStatus"];
-                dueDateStr = result[0]["due_date"];
-                bookIdStr = result[0]["bookID"];
-                bookTitleStr = result[0]["title"];
-                bookPriceStr = result[0]["price"];
-                dueDays = 0;  // Default for non-overdue books
+                    loanID = result[0]["loanID"];
+                    bookStatus = result[0]["bookStatus"];
+                    dueDateStr = result[0]["due_date"];
+                    bookIdStr = result[0]["bookID"];
+                    bookTitleStr = result[0]["title"];
+                    bookPriceStr = result[0]["price"];
+                    dueDays = 0;  // Default for non-overdue books
 
-                // Handle status updates for 'Damaged' or 'Lost'
-                if (bookStatus == "Borrowing" || bookStatus == "Overdue") {
-                    std::cout << YELLOW << "\x1b[6;1H" << "Do you want to update the status of this book to 'Damaged' or 'Lost'? (Y/N): " << RESET;
-                    confirmation = _getch();
-                    if (confirmation == 'Y' || confirmation == 'y') {
-                        bool statusSelecting = true;
-                        int statusSelected = 0;
+                    // Handle status updates for 'Damaged' or 'Lost'
+                    if (bookStatus == "Borrowing" || bookStatus == "Overdue") {
+                        std::cout << YELLOW << "\x1b[6;1H" << "Do you want to update the status of this book to 'Damaged' or 'Lost'? (Y/N): " << RESET;
+                        confirmation = _getch();
+                        if (confirmation == 'Y' || confirmation == 'y') {
+                            bool statusSelecting = true;
+                            int statusSelected = 0;
 
-                        // Let user choose the new status
-                        while (statusSelecting) {
-                            system("cls");
-                            std::cout << "Select the new status for the book:\n";
-                            std::cout << (statusSelected == 0 ? "-> " : "   ") << BG_YELLOW << "Damaged" << RESET << std::endl;
-                            std::cout << (statusSelected == 1 ? "-> " : "   ") << BG_YELLOW << "Lost" << RESET << std::endl;
+                            // Let user choose the new status
+                            while (statusSelecting) {
+                                system("cls");
+                                std::cout << "Select the new status for the book:\n";
+                                std::cout << (statusSelected == 0 ? "-> " : "   ") << (statusSelected == 0 ? BG_YELLOW : "") << "Damaged" << RESET << std::endl;
+                                std::cout << (statusSelected == 1 ? "-> " : "   ") << (statusSelected == 1 ? BG_YELLOW : "") << "Lost" << RESET << std::endl;
 
-                            std::cout << "\nUse arrow keys to navigate and press Enter to confirm.\n";
+                                std::cout << "\nUse arrow keys to navigate and press Enter to confirm.\n";
 
-                            char statusKey = _getch();
-                            switch (statusKey) {
-                            case KEY_UP:
-                                statusSelected = (statusSelected - 1 + 2) % 2;  // Wrap around
-                                break;
-                            case KEY_DOWN:
-                                statusSelected = (statusSelected + 1) % 2;  // Wrap around
-                                break;
-                            case KEY_ENTER:
-                                if (statusSelected == 0) {
-                                    db->executeQuery("UPDATE Loan SET bookStatus = 'Damaged' WHERE loanID = '" + loanID + "'");
-                                    bookStatus = "Damaged";
+                                char statusKey = _getch();
+                                switch (statusKey) {
+                                case KEY_UP:
+                                    statusSelected = (statusSelected - 1 + 2) % 2;  // Wrap around
+                                    break;
+                                case KEY_DOWN:
+                                    statusSelected = (statusSelected + 1) % 2;  // Wrap around
+                                    break;
+                                case KEY_ENTER:
+                                    if (statusSelected == 0) {
+                                        db->executeQuery("UPDATE Loan SET bookStatus = 'Damaged' WHERE loanID = '" + loanID + "'");
+                                        bookStatus = "Damaged";
+                                    }
+                                    else if (statusSelected == 1) {
+                                        db->executeQuery("UPDATE Loan SET bookStatus = 'Lost' WHERE loanID = '" + loanID + "'");
+                                        bookStatus = "Lost";
+                                    }
+                                    std::cout << GREEN << "Book status updated to '" << bookStatus << "' successfully!" << RESET << std::endl;
+                                    std::this_thread::sleep_for(std::chrono::seconds(2));
+                                    statusSelecting = false;
+                                    break;
+                                case KEY_ESC:
+                                    statusSelecting = false;  // Cancel status update
+                                    break;
                                 }
-                                else if (statusSelected == 1) {
-                                    db->executeQuery("UPDATE Loan SET bookStatus = 'Lost' WHERE loanID = '" + loanID + "'");
-                                    bookStatus = "Lost";
-                                }
-                                std::cout << GREEN << "Book status updated to '" << bookStatus << "' successfully!" << RESET << std::endl;
-                                std::this_thread::sleep_for(std::chrono::seconds(2));
-                                statusSelecting = false;
-                                break;
-                            case KEY_ESC:
-                                statusSelecting = false;  // Cancel status update
-                                break;
                             }
                         }
                     }
-                }
 
-                // Process fine based on book status
-                if (bookStatus == "Overdue") {
-                    dueDays = getDueTime(dueDateStr);
-                    if (dueDays == -1) {
-                        std::cout << RED << "Invalid due date for calculation. Fine not added." << RESET << std::endl;
-                        std::this_thread::sleep_for(std::chrono::seconds(2));
-                        break;
+                    // Process fine based on book status
+                    if (bookStatus == "Overdue") {
+                        dueDays = getDueTime(dueDateStr);
+                        if (dueDays == -1) {
+                            std::cout << RED << "Invalid due date for calculation. Fine not added." << RESET << std::endl;
+                            std::this_thread::sleep_for(std::chrono::seconds(2));
+                            break;
+                        }
+                        newFineRecord.fineReason = "Book is Overdue";
                     }
-                    newFineRecord.fineReason = "Book is Overdue";
-                }
-                else if (bookStatus == "Damaged") {
-                    newFineRecord.fineReason = "Book is Damaged";
-                }
-                else if (bookStatus == "Lost") {
-                    newFineRecord.fineReason = "Book is Lost";
-                }
-                else {
-                    break;  // Skip invalid statuses
-                }
+                    else if (bookStatus == "Damaged") {
+                        newFineRecord.fineReason = "Book is Damaged";
+                    }
+                    else if (bookStatus == "Lost") {
+                        newFineRecord.fineReason = "Book is Lost";
+                    }
+                    else {
+                        break;  // Skip invalid statuses
+                    }
 
-                // Add fine to the list
-                newFineRecord.loanID = loanID;
-                newFineRecord.bookID = bookIdStr;
-                newFineRecord.bookTitle = bookTitleStr;
-                newFineRecord.bookPrice = bookPriceStr;
-                newFineRecord.bookStatus = bookStatus;
-                newFineRecord.dueDays = dueDays;
-                totalFines.push_back(newFineRecord);
+                    // Add fine to the list
+                    newFineRecord.loanID = loanID;
+                    newFineRecord.bookID = bookIdStr;
+                    newFineRecord.bookTitle = bookTitleStr;
+                    newFineRecord.bookPrice = bookPriceStr;
+                    newFineRecord.bookStatus = bookStatus;
+                    newFineRecord.dueDays = dueDays;
+                    totalFines.push_back(newFineRecord);
 
-                std::cout << GREEN << "\x1b[2;20H" << "Fine added successfully!" << RESET << std::endl;
-                std::this_thread::sleep_for(std::chrono::seconds(2));
-                break;
-            case 1:  // Pay Selected Fines
-                doPayment(user, totalFines);
-                selecting = false;
-                break;
-            case 2:  // Return to Main Menu
-                selecting = false;
-                break;
-            default:
-                std::cout << RED << "Invalid option selected." << RESET << std::endl;
-                break;
-            }
-                  break;
-            case KEY_ESC:
-                selecting = false;
-                break;
+                    std::cout << GREEN << "\x1b[2;20H" << "Fine added successfully!" << RESET << std::endl;
+                    std::this_thread::sleep_for(std::chrono::seconds(2));
+                    break;
+                case 1:  // Pay Selected Fines
+                    doPayment(user, totalFines);
+                    selecting = false;
+                    break;
+                case 2:  // Return to Main Menu
+                    selecting = false;
+                    break;
+                default:
+                    std::cout << RED << "Invalid option selected." << RESET << std::endl;
+                    break;
+                }
             }
         }
     }while (selecting);
@@ -632,7 +632,7 @@ void Fine::doPayment(User user, std::vector<FineRecord>& totalFines)
         std::cout << "User ID: " << user.getUserID() << "\n";
         std::cout << "Username: " << user.getName() << "\n";
         std::cout << "Role: " << user.getRole() << "\n";
-        std::cout << "Payment Date (YYYY-MM-DD HH/MM/SS): " << currentDateTime << "\n";
+        std::cout << "Payment Date (YYYY-MM-DD HH:MM:SS): " << currentDateTime << "\n";
         std::cout << "==================================================\n";
 
         tabulate::Table receiptTable;

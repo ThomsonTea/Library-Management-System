@@ -746,7 +746,7 @@ void User::deleteUser()
                     "FROM User WHERE userID = '" + searchData + "'";
                 if (!db->recordExists(query)) {
                     std::cout << "\x1b[4;8H" << RED << "Error: User with ID '" << searchData << "' does not exist." << RESET << std::endl;
-                    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                    std::this_thread::sleep_for(std::chrono::seconds(2));
                     break;
                 }
                 selectedSearchCriteria = "userID";  // Set search criteria to userID
@@ -902,7 +902,6 @@ void User::editUser()
     std::string query;  // Query for database search.
     sql::PreparedStatement* pstmt = nullptr;  // Declare outside the switch.
     User user(db);  // Object to hold user data during editing.
-    char prefix = 'U';
     do
     {
 
@@ -930,17 +929,17 @@ void User::editUser()
             {
             case 0:
                 std::cout << "\x1b[4;8H";
-                std::cin >> data;
+                getline(std::cin, data);
                 searchColumn = "userID";
                 break;
             case 1:
                 std::cout << "\x1b[5;10H";
-                std::cin >> data;
+                getline(std::cin, data);
                 searchColumn = "name";
                 break;
             case 2:
                 std::cout << "\x1b[6;8H";
-                std::cin >> data;
+                getline(std::cin, data);
                 searchColumn = "ic";
                 break;
             default:
@@ -1016,6 +1015,8 @@ void User::editUser()
                 std::cout << (selected == 3 ? "-> " : "   ") << (selected == 3 ? BG_YELLOW : "") << "Address: " << RESET << std::endl;
                 std::cout << (selected == 4 ? "-> " : "   ") << (selected == 4 ? BG_YELLOW : "") << "Password: " << RESET << std::endl;
                 std::cout << (selected == 5 ? "-> " : "   ") << (selected == 5 ? BG_GREEN : "") << "Save and Exit" << RESET << std::endl;
+
+                std::cout << "\n\n\nUse arrow keys to navigate, press Enter to select, or press Esc to quit.\n";
 
                 char fieldInput = _getch();
                 switch (fieldInput)
@@ -1173,7 +1174,7 @@ void User::registerUser()
                     std::getline(std::cin, data);
                     if (!checkICFormat(data))
                     {
-                        std::cerr << "\x1b[20;8H" << RED << "Invalid IC format. Please try again." << RESET << std::endl;
+                        std::cerr << "\x1b[20;25H" << RED << "Invalid IC format. Please try again." << RESET << std::endl;
                         std::this_thread::sleep_for(std::chrono::seconds(2));
                     }
                         
@@ -1200,7 +1201,7 @@ void User::registerUser()
                     }
                     else
                     {
-                        std::cerr << "\x1b[21;18H" << RED << "Invalid email format. Please try again." << RESET << std::endl;
+                        std::cerr << "\x1b[22;18H" << RED << "Invalid email format. Please try again." << RESET << std::endl;
                         std::this_thread::sleep_for(std::chrono::seconds(2));
                     }
                     break;
@@ -1262,7 +1263,8 @@ void User::registerUser()
                     }
                     else {
                         try {
-                            prefix = (newUser.getRole() == "Admin") ? 'A' : (newUser.getRole() == "Staff") ? 'S' : 'P';
+                            prefix = (newUser.getRole() == "Admin") ? 'A' :
+                                (newUser.getRole() == "Staff") ? 'S' : 'P';
                             query = "SELECT userID FROM User WHERE userID LIKE ? ORDER BY userID DESC LIMIT 1";
                             pstmt = db->getConnection()->prepareStatement(query);
 
@@ -1270,21 +1272,37 @@ void User::registerUser()
                             pstmt->setString(1, std::string(1, prefix) + "%");
                             res = pstmt->executeQuery();
 
-                            if (res->next())
-                            {
+                            if (res->next()) {
                                 // Get the last userID and increment the numeric part
                                 std::string lastUserID = res->getString("userID");
-                                int lastIDNumber = std::stoi(lastUserID.substr(1)); // Remove prefix and convert to integer
-                                int newIDNumber = lastIDNumber + 1;
 
-                                // Format the new userID with leading zeros
-                                std::ostringstream oss;
-                                oss << prefix << std::setw(8) << std::setfill('0') << newIDNumber;
-                                std::string id = oss.str();
-                                newUser.setUserID(id);
+                                // Ensure that the userID has a valid numeric part after the prefix
+                                if (lastUserID.length() > 1) {
+                                    try {
+                                        int lastIDNumber = std::stoi(lastUserID.substr(1)); // Remove prefix and convert to integer
+                                        int newIDNumber = lastIDNumber + 1;
+
+                                        // Format the new userID with leading zeros
+                                        std::ostringstream oss;
+                                        oss << prefix << std::setw(8) << std::setfill('0') << newIDNumber;
+                                        std::string id = oss.str();
+                                        newUser.setUserID(id);
+                                    }
+                                    catch (const std::invalid_argument&) {
+                                        std::cerr << "Invalid userID format: " << lastUserID << std::endl;
+                                        // Handle error (e.g., exit or return)
+                                    }
+                                    catch (const std::out_of_range&) {
+                                        std::cerr << "UserID number out of range: " << lastUserID << std::endl;
+                                        // Handle error
+                                    }
+                                }
+                                else {
+                                    std::cerr << "Invalid userID format: " << lastUserID << std::endl;
+                                    // Handle error
+                                }
                             }
-                            else
-                            {
+                            else {
                                 // Start with the first userID if none exist
                                 std::string id = std::string(1, prefix) + "00000001";
                                 newUser.setUserID(id);
