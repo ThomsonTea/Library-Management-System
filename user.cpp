@@ -4,6 +4,11 @@
 #include <chrono>
 #include <string>
 #include <sstream>
+#include <cppconn/driver.h>
+#include <cppconn/exception.h>
+#include <cppconn/prepared_statement.h>
+#include <cppconn/statement.h>
+#include <cppconn/resultset.h>
 #include "user.h"
 #include <tabulate/table.hpp>
 #include "dbConnection.h"
@@ -316,6 +321,7 @@ void User::userProfile(User& user)
     std::string displayUserQuery;
     do
     {
+        double totalFine = 0;
         system("cls");
         std::cout << CYAN << "Welcome, " << YELLOW << user.getName() << CYAN << "!\n" << RESET << std::endl;
         tabulate::Table table;
@@ -332,16 +338,44 @@ void User::userProfile(User& user)
 
         pivotTableFormat(table);
 
+        // SQL query to fetch borrowing status and calculate fines
         displayUserQuery =
-            "SELECT b.bookID, b.title, b.author, l.borrow_date, l.due_date, l.bookStatus "
+            "SELECT b.bookID, b.title, b.author, l.borrow_date, l.due_date, l.bookStatus, rp.overdueFineRate AS 'Overdue Fine Per Day', "
+            "CASE WHEN l.due_date < CURRENT_DATE AND l.bookStatus = 'Overdue' THEN DATEDIFF(CURRENT_DATE, l.due_date) ELSE 0 END AS overdueDays, "
+            "CASE WHEN l.due_date < CURRENT_DATE AND l.bookStatus = 'Overdue' THEN DATEDIFF(CURRENT_DATE, l.due_date) * rp.overdueFineRate ELSE 0 END AS Fine "
             "FROM Loan l "
             "JOIN Book b ON l.bookID = b.bookID "
+            "JOIN User u ON l.userID = u.userID "
+            "JOIN rolePrivilege rp ON u.role = rp.role "
             "WHERE l.userID = '" + user.getUserID() + "' "
-            "AND l.bookStatus IN('Borrowing','Overdue') "
-            "AND l.return_date IS NULL";
+            "AND l.bookStatus IN('Borrowing', 'Overdue') "
+            "AND l.return_date IS NULL;";
 
-        std::cout << CYAN << "\n== Current Borrowing Status ==" << std::endl;
+        // Fetch and display borrowing status
+        std::cout << CYAN << "\n== Current Borrowing Status ==" << RESET << std::endl;
+
         db->fetchAndDisplayData(displayUserQuery);
+
+        // Fetch results from the database
+        std::vector<std::map<std::string, std::string>> results = db->fetchResults(displayUserQuery);
+
+        // Loop through the results and accumulate the fine
+        for (const auto& row : results) {
+            for (const auto& [key, value] : row) {
+                if (key.empty() && !value.empty()) {  // Unnamed column check
+                    try {
+                        double fine = std::stod(value);  // Convert to double
+                        totalFine += fine;  // Add to total fine
+                    }
+                    catch (const std::exception& e) {
+                        std::cerr << "Error parsing unnamed column as fine: " << e.what() << "\n";
+                    }
+                }
+            }
+        }
+
+        std::cout << CYAN << "Total Fine for Overdue Books: "
+            << RED << "RM " << std::fixed << std::setprecision(2) << totalFine << RESET << "\n";
 
         // Settings Menu with arrow key navigation
         std::cout << "\nSettings:\n";
@@ -381,6 +415,7 @@ void User::userProfile(User& user)
         }
     } while (!quitProfile);
 }
+
 
 
 void User::retrieveUserFromDB(const std::string& userID)
